@@ -1,0 +1,15 @@
+#Google Maps API
+googlemaps
+
+#Google Sheets API
+gspread
+google-auth
+
+#.envファイルの読み込み
+python-dotenv
+
+#ブラウザ自動操作
+selenium
+
+#データ分析（スプレッドシート読み込み用）
+pandas
