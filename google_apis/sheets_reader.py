@@ -11,8 +11,6 @@ from utils import logger
 #Pathを使うため
 from pathlib import Path
 
-#.envから設定を読み込むための
-#from utils.env_loader import config　#直接呼ぶからコメントアウト
 #=========================================================
 
 class SheetReader:
@@ -21,10 +19,17 @@ class SheetReader:
         self.logger_setup = logger.SimpleLogger()
         self.logger = self.logger_setup.get_logger()
         
+        #Noneで初期化
+        self.client = None           #これはapiの接続窓口で接続前的な！よく分からない！まとめ案件！
+        self.spreadsheet_id = None   #スプシも空っぽ
+        
     #１つ目のフロー
     #WSとのAPI連携
     ##.envの場所を特定　Path(__file__)はファイル自身の住所！
     def gspread_api(self):
+        #認証に必要なものも初期化
+        creds = None
+        
         self.env_path = Path(__file__).parents[1]
         dotenv_path = self.env_path/".env"
         load_dotenv(dotenv_path)
@@ -32,18 +37,12 @@ class SheetReader:
         json_path_from_env = os.getenv("SERVICE_ACCOUNT_FILE_PATH")
         self.spreadsheet_id = os.getenv("SPREADSHEET_ID")
         
-        
         #ここでID取得のときにエラーがでないかを確認する！
-        #まだ未作成
-        
-        
-        
-        #承認&実行
-        #リスト：実行していいよの定型文みたいなもの
-        scopes = [
-            'https://www.googleapis.com/auth/spreadsheets',
-            'https://www.googleapis.com/auth/drive'
-        ]
+        #【条件分岐】 空っぽではない場合
+        if json_path_from_env and self.spreadsheet_id:
+            try:
+                self.logger.info("IDを取得しました。Googleへの接続を試みます。")
+            
         
     #２つ目のフロー
     #スプレッドシートのクリニック一覧シートのデータを取得
