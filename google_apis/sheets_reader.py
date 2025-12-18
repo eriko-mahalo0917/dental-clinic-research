@@ -164,8 +164,8 @@ class SheetReader:
         
         #②ステータス空白を抽出
         #df["ステータス"]列だけ取り出す　
-        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #.isna()→空白かどうかをTrue / False で判定してくれて、Trueだけのdfにしてくれる
-        clinic_name_list = status_none_df[clinic_key].tolist() #.tolist()→残った行の中から「クリニック名」列だけを取り出す
+        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #文字列にして、前後の空白消して、空文字かどうかをTrue / False で判定
+        clinic_name_list = status_none_df[clinic_key].tolist() #.tolist()でリストにしている
         return clinic_name_list
     
 
