@@ -27,17 +27,15 @@ class SheetReader:
         self.logger_setup = SimpleLogger()
         self.logger = self.logger_setup.get_logger()
         
-        #Noneで初期化 空っぽだから、まだ接続していないと分かる
-        #１〜３のフローで毎回接続が必要になるから、最初に__init__に入れる
-        self.client = None
-        self.spreadsheet_id = None
+        
+        
     
     #-----------------------------------------------
     # １つ目のフロー：API連携
     #----------------------------------------------- 
     #jsonファイルのパスを取得
     def _get_json_path(self):
-        #.envファイルから"creds.json"を名前を見つけて取り出す
+        #親の親ディレクトリに creds.json がある
         json_name = "creds.json"
         self.logger.info(f"JSONファイル名: {json_name}")
         
@@ -82,12 +80,7 @@ class SheetReader:
     
 # ------------------------------------------------------------    
     #対象のスプシを開く
-    def _get_gsheet_df_to_gui(
-        self,
-        gui_info: Dict, 
-        sheet_url: str, 
-        worksheet_name: str
-        ):
+    def _get_gsheet_df( self, sheet_url: str, worksheet_name: str ):
         
         """
         指定したGoogleスプレッドシートのURLとワークシートのデータを取得して
@@ -101,12 +94,10 @@ class SheetReader:
         #どっちもgspreadのメソッド
         worksheet = client.open_by_url(url = sheet_url).worksheet(worksheet_name)
         
-        #ワークシートの全テータをゲットせよの関数！これはgspreadのメソッド
-        all_values = worksheet.get_all_values()
-        self.logger.debug(f"ワークシート全データ：\n{all_values}")
+        self.logger.info("ワークシート全データを取得します")
         
-        #シートのデータを辞書リストとして取得
-        #１行目をヘッダーとして使って、{名：値}にする
+        #シートの全データを辞書リストとして取得
+        #１行目をヘッダーとして使った辞書　{名：値}にする
         #空白が列名の１列目に空白があると失敗するので注意
         dict_data = worksheet.get_all_records()
         
@@ -116,80 +107,101 @@ class SheetReader:
         return df
     
     #-----------------------------------------------
-    #２つ目のフロー
+    #２つ目のフロー　全データをdfで取得する
     #-----------------------------------------------
+    def get_clinic_name_df(self, sheet_url: str, worksheet_name: str)-> pd.DataFrame:
         """
         取得した歯医者さんの名前を全てDataFrameとして読み込む
         ①１つ目もフローの全データを再利用
-        ②クリニック名の列を取り出す
         """
-    def get_clinic_name_df(
-        self,
-        gui_info: Dict, 
-        sheet_url: str, 
-        worksheet_name: str,
-        clinic_column: str
-        )-> pd.DataFrame:
-        
         #①１つ目にフローを呼び出して利用して全データを取得したものをdf_allに代入する
-        df_all = self._get_gsheet_df_to_gui(
-            gui_info=gui_info,
-            sheet_url=sheet_url,
-            worksheet_name=worksheet_name
-            )
+        df_all = self._get_gsheet_df( sheet_url=sheet_url, worksheet_name=worksheet_name )
         
-        #②クリニックの列を指定する
-        try:
-            #[[]]は二次元らしい！そしてこれは縦だけをdfとして取り出す！
-            clinic_df = df_all[[clinic_column]]
-            self.logger.info(f"{clinic_column}の取得に成功しました！")
-            return clinic_df
-        except Exception as e:
-            #指定した列が存在しない場合＋何が指定できるのかを１行目を表示してリストで出す
-            self.logger.error(f"{clinic_column}の列が存在しません！\n利用可能な列は{list(df_all.columns)}")
-            #処理停止
-            raise
-        
+        self.logger.info("一覧のシートの全データを取得しました")
+        return df_all        
         
         
     #-----------------------------------------------
-    #３つ目のフロー
+    #３つ目のフロー　今のWS名をすべて取得する ※今は使わないため、コメントアウト
     #-----------------------------------------------
-    #２つ目で取得したDataFrameを受け取る
-    #DataFrameをチェックし、入力済みのステータスがない行だけを抽出
-    #抽出したデータから、クリニック名のリストを返す
+    #def get_all_ws_name(self,sheet_url: str):
+        #"""
+        #①鍵をゲット
+        #②スプシをURLで開く
+        #③全てのワークシートを取得
+        #④WS名をリストにする
+        #"""
+        
+        #①同じクラス内のget_clientメソッドを呼び出して鍵をゲット
+        #client = self.get_client()
+        
+        #②対象のスプレッドシートをURLで開く
+        #どっちもgspreadのメソッド
+        #spreadsheet = client.open_by_url(sheet_url)
+        
+        #self.logger.info(f"WS名を一覧で取得します")
+        
+        #③すべてのワークシート（タブ）を取得するメソッド
+        #worksheets = spreadsheet.worksheets()
+        
+        #④ws名だけを取り出してリストにする
+        #これはリスト内包表記！おまとめ式！wsの属性でタイトルだけを取得
+        #ws_name_list = [ws.title for ws in worksheets] #ws.titleってすることでタイトルだけ取れる！大事！
+        
+        #self.logger.info(f"取得したWS名一覧：{ws_name_list}")
+        #return ws_name_list
+        
+    
+    #-----------------------------------------------
+    #４つ目のフロー　スタータスが空白のクリニック名を取得する
+    #-----------------------------------------------
+    def get_status_none_clinic_name_list(self,df: pd.DataFrame, status_key: str, clinic_key: str) -> list:
+        """
+        ステータスが空白の列だけ残す
+        クリニック名を取得する
+        """
+        self.logger.info("スタータス空白のクリニック名を取得します")
+        
+        #②ステータス空白を抽出
+        #df["ステータス"]列だけ取り出す　
+        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #.isna()→空白かどうかをTrue / False で判定してくれて、Trueだけのdfにしてくれる
+        clinic_name_list = status_none_df[clinic_key].tolist() #.tolist()→残った行の中から「クリニック名」列だけを取り出す
+        return clinic_name_list
+    
+
 
 
 #〜〜〜〜実行〜〜〜〜
 if __name__ == "__main__":
 
     instance_sheet_reader = SheetReader()
-    # JSONファイルのパスを取得
-    json_path_from_env = instance_sheet_reader._get_json_path()
-    print(f"JSON Path from .env: {json_path_from_env}")   
-    
-   
-    TEST_URL = "https://docs.google.com/spreadsheets/d/1PrESjDHuqNpsZfo-fvd6hb8tOuAXl63aDio7hdjt6hg/edit?gid=1025571184"
-    TEST_SHEET = "クリニック一覧"  
-    CLINIC_COLUMN = "クリニック名" 
-    
-    # df_all を取得
-    df_all = instance_sheet_reader._get_gsheet_df_to_gui(
-        gui_info={},
-        sheet_url=TEST_URL,
-        worksheet_name=TEST_SHEET
-    )
 
-    print("--- df_all 取得成功 ---")
+    # ---------------------------------
+    # ① JSONファイルのパス確認
+    # ---------------------------------
+    json_path = instance_sheet_reader._get_json_path()
+    print(f"JSON Path: {json_path}")
+
+    # ---------------------------------
+    # テスト用定数
+    # ---------------------------------
+    TEST_URL = "https://docs.google.com/spreadsheets/d/1PrESjDHuqNpsZfo-fvd6hb8tOuAXl63aDio7hdjt6hg/edit?gid=1025571184#gid=1025571184"
+    TEST_SHEET = "テスト一覧"
+    CLINIC_KEY = "クリニック名"
+    STATUS_KEY = "ステータス"
+
+    # ---------------------------------
+    # ② 全データ取得
+    # ---------------------------------
+    df_all = instance_sheet_reader._get_gsheet_df(sheet_url=TEST_URL,worksheet_name=TEST_SHEET)
+
+    print("\n--- df_all 取得成功 ---")
     print(df_all.head())
 
-    try:
-        clinic_df = df_all[[CLINIC_COLUMN]]
-        print(f"--- {CLINIC_COLUMN} 列抽出成功 ---")
-        print(clinic_df.head())
-    except Exception as e:
-        print(f"列 {CLINIC_COLUMN} が存在しません！")
-        print(f"利用可能な列: {list(df_all.columns)}")
-        raise
+    # ---------------------------------
+    # ④ 空白のステータスのクリニック名を取得
+    #  ---------------------------------
+    no_status_clinic_list = instance_sheet_reader.get_status_none_clinic_name_list( df=df_all, status_key=STATUS_KEY, clinic_key=CLINIC_KEY )
 
-    print("--- クリニック名 DataFrame 取得完了 ---")
+    print("\n--- ステータス空白のクリニック名一覧 ---")
+    print(no_status_clinic_list)
