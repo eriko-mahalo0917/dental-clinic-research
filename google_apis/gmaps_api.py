@@ -40,7 +40,7 @@ class GoogleMapsAPI:
         self.logger.info(f"クリニック名を受け取りました:{clinic_name}")
         return clinic_name
         
- 
+
 #-----------------------------------------------
 # ２つ目のフロー
 # GoogleMapsのAPIでクリニックを検索する！
@@ -80,3 +80,37 @@ class GoogleMapsAPI:
 #-----------------------------------------------
 
 
+
+#〜〜〜〜〜実行〜〜〜〜〜〜
+if __name__ == "__main__":
+    #インスタンス
+    api = GoogleMapsAPI()
+    
+    #テスト①正常なクリニック名　※ここではただ単にクリニック名を入れたときのテスト
+    result = api.receive_clinic_name("テストクリニック")
+    print("テスト①：",result)
+    
+    #テスト②　※空っぽだったらNoneのテスト
+    result = api.receive_clinic_name("")
+    print("テスト②：",result)
+
+    #sheet_reader.pyからちゃんと受け取れているかチェック
+    from sheets_reader import SheetReader
+        
+    reader = SheetReader()
+        
+    TEST_URL = TEST_URL = "https://docs.google.com/spreadsheets/d/1PrESjDHuqNpsZfo-fvd6hb8tOuAXl63aDio7hdjt6hg/edit?gid=1025571184#gid=1025571184"
+    TEST_SHEET = "テスト一覧"
+    CLINIC_KEY = "クリニック名"
+    STATUS_KEY = "ステータス"
+        
+    df_all = reader.get_clinic_name_df( sheet_url=TEST_URL, worksheet_name=TEST_SHEET )
+    
+    clinic_list = reader.get_status_none_clinic_name_list( df=df_all, status_key=STATUS_KEY, clinic_key=CLINIC_KEY )
+
+
+    #リストにしてみる
+    for clinic_name in clinic_list:
+        result = api.receive_clinic_name(clinic_name)
+        #
+        print("受け取った名前:", result)
