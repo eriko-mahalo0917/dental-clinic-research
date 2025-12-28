@@ -15,6 +15,9 @@ import requests
 #ログ
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
+
+from dotenv import load_dotenv
+load_dotenv()
 #=========================================================
 
 class GoogleMapsAPI:
@@ -25,7 +28,8 @@ class GoogleMapsAPI:
         
         #APIキーの取得（.envにある）
         self.api_key = os.getenv("GOOGLE_MAPS_API_KEY")
-
+        
+    #レシーブ！受け取るだけど、ちょっとしっくり来ないから検討中！
     def receive_clinic_name(self,clinic_name: str) ->Optional[str]: #結果があるときは文字で返すけど、ないときはNoneって返すかもって意味
         #-----------------------------------------------
         # １つ目のフロー
@@ -40,11 +44,43 @@ class GoogleMapsAPI:
         self.logger.info(f"クリニック名を受け取りました:{clinic_name}")
         return clinic_name
         
-
-#-----------------------------------------------
-# ２つ目のフロー
-# GoogleMapsのAPIでクリニックを検索する！
-#-----------------------------------------------
+    
+    def search_clinic(self, clinic_name: str) ->Optional[Dict]:
+        #-----------------------------------------------
+        # ２つ目のフロー
+        # GoogleMapsのAPIでクリニックを検索する！
+        #見つからなかったらNoneを返す
+        #-----------------------------------------------
+        #みんな共通のもの！GoogleMapsAPI（Text Search）のエンドポイント
+        url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
+        
+        #APIにパラメーターを渡す　これはよく使う基本のパラメーター！
+        #検索ワード、日本語、APIキー
+        params = {"query": clinic_name,"language": "ja" ,"key":self.api_key}
+        
+        try:
+            self.logger.info(f"検索を開始します")
+            
+            #GoogleMapのAPIにリクエストする
+            #最大10秒待機！それ以上はタイムアウトでエラー
+            response = requests.get(url, params=params, timeout=10)
+            
+            #HTTPのエラーが分かるメソッド！（認証エラーや見つからないや回数制限とか）
+            response.raise_for_status()
+            #レスポンスのJSONを辞書にしたもの
+            return response.json()
+        
+        #通信系エラーのために用意されているもの
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}\n {e}")
+            
+            #処理停止になったら、止まってしまうため、エラー時はNoneを返して処理を続ける！
+            return None
+            
+            
+        
+        
+        
 
 #-----------------------------------------------
 # ３つ目のフロー
@@ -86,31 +122,48 @@ if __name__ == "__main__":
     #インスタンス
     api = GoogleMapsAPI()
     
-    #テスト①正常なクリニック名　※ここではただ単にクリニック名を入れたときのテスト
+    #-----------------------------
+    #テスト①：１つ目のフロー単体
+    #-----------------------------
+    #正常なクリニック名　※ここではただ単にクリニック名を入れたときのテスト
     result = api.receive_clinic_name("テストクリニック")
     print("テスト①：",result)
     
-    #テスト②　※空っぽだったらNoneのテスト
+    #空っぽだったらNoneのテスト　レシーブは受け取る！
     result = api.receive_clinic_name("")
     print("テスト②：",result)
+    
+    #-----------------------------
+    #テスト②：１つ目のフロー sheets_reader.pyでのクリニック名を受け取る
+    #-----------------------------
 
     #sheet_reader.pyからちゃんと受け取れているかチェック
     from sheets_reader import SheetReader
         
     reader = SheetReader()
         
-    TEST_URL = TEST_URL = "https://docs.google.com/spreadsheets/d/1PrESjDHuqNpsZfo-fvd6hb8tOuAXl63aDio7hdjt6hg/edit?gid=1025571184#gid=1025571184"
+    TEST_URL =  "https://docs.google.com/spreadsheets/d/1PrESjDHuqNpsZfo-fvd6hb8tOuAXl63aDio7hdjt6hg/edit?gid=1025571184#gid=1025571184"
     TEST_SHEET = "テスト一覧"
     CLINIC_KEY = "クリニック名"
     STATUS_KEY = "ステータス"
         
     df_all = reader.get_clinic_name_df( sheet_url=TEST_URL, worksheet_name=TEST_SHEET )
+    clinic_list = reader.get_status_none_clinic_name_list(df=df_all, status_key=STATUS_KEY,clinic_key=CLINIC_KEY)
     
-    clinic_list = reader.get_status_none_clinic_name_list( df=df_all, status_key=STATUS_KEY, clinic_key=CLINIC_KEY )
-
-
-    #リストにしてみる
+    #-----------------------------
+    #テスト③：１つ目のフロー →　２つ目のフロー
+    #-----------------------------
     for clinic_name in clinic_list:
-        result = api.receive_clinic_name(clinic_name)
-        #
-        print("受け取った名前:", result)
+        clinic_name_for_search = api.receive_clinic_name(clinic_name)
+        
+        response_json = api.search_clinic(clinic_name_for_search)
+        
+        #もし空っぽだったら！==でもいいけど、１つしか尊意しないからisの方が良い
+        if response_json is None:
+            print("→ 検索エラー")
+            continue
+        
+        print("→ 検索成功")
+        #これはAPIのステータスを見ている
+        print("status:", response_json.get("status"))
+        print(response_json)
