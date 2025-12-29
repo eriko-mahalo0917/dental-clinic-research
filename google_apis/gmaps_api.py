@@ -47,9 +47,9 @@ class GoogleMapsAPI:
     
     def search_clinic(self, clinic_name: str) ->Optional[Dict]:
         #-----------------------------------------------
-        # ２つ目のフロー
+        # ２つ目のフロー　※検索して結果を丸ごと取得しただけのフロー
         # GoogleMapsのAPIでクリニックを検索する！
-        #見つからなかったらNoneを返す
+        #見つからなかったらNoneを返す　
         #-----------------------------------------------
         #みんな共通のもの！GoogleMapsAPI（Text Search）のエンドポイント
         url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
@@ -75,11 +75,7 @@ class GoogleMapsAPI:
             self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}\n {e}")
             
             #処理停止になったら、止まってしまうため、エラー時はNoneを返して処理を続ける！
-            return None
-            
-            
-        
-        
+            return None     
         
 
 #-----------------------------------------------
@@ -164,6 +160,7 @@ if __name__ == "__main__":
             continue
         
         print("→ 検索成功")
-        #これはAPIのステータスを見ている
+        #これはAPIのステータスを見ているという意味
         print("status:", response_json.get("status"))
+        #どんなの取得しているか全部見てみたいから出力してみる！
         print(response_json)
