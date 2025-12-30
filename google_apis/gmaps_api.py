@@ -77,13 +77,42 @@ class GoogleMapsAPI:
             #処理停止になったら、止まってしまうため、エラー時はNoneを返して処理を続ける！
             return None     
         
-
-#-----------------------------------------------
-# ３つ目のフロー
-# 検索結果からplace_idを取得する
-# 見つからない場合はNoneを返す
-#-----------------------------------------------
-
+    #２つ目のフローからゲットした結果を引数に入れていて辞書型！Optional[str]は戻り値が文字列かもしれないし、Noneかもしれない！
+    def get_place_id(self,search_result_json: Dict) -> Optional[str]:
+        #-----------------------------------------------
+        # ３つ目のフロー
+        # 検索結果からplace_idを取得する
+        # 見つからない場合はNoneを返す
+        #-----------------------------------------------
+        
+        if search_result_json is None:
+            self.logger.info("検索結果がNoneです")
+            return None
+        
+        #検索結果のリストを取得する。存在しなければ空のリストを返す
+        """
+        .get("results", []) は 辞書の標準メソッド
+        ①辞書に"results"というキーがあればその値を返す
+        ②キーが存在しないときは第２引数の値の空っぽリストを返す
+        """
+        results = search_result_json.get("results",[])
+        
+        
+        if not results:
+            self.logger.info("検索結果にplace_idが存在しません")
+            return None
+        
+        #最初の候補の place_id を取得
+        place_id = results[0].get("place_id")
+        if not place_id:
+            self.logger.info("place_idが取得できませんでした") 
+            return None
+        
+        self.logger.info("place_idが取得しました！：成功")
+        return place_id
+        
+        
+        
 #-----------------------------------------------
 # ４つ目のフロー
 # place_id を使って基本情報を取得する
@@ -164,3 +193,8 @@ if __name__ == "__main__":
         print("status:", response_json.get("status"))
         #どんなの取得しているか全部見てみたいから出力してみる！
         print(response_json)
+    
+    
+    #-----------------------------
+    #テスト④：１つ目のフロー →　２つ目のフロー　→　３つ目のフロー
+    #-----------------------------
