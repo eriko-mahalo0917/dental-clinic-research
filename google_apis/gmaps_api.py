@@ -95,15 +95,15 @@ class GoogleMapsAPI:
         ①辞書に"results"というキーがあればその値を返す
         ②キーが存在しないときは第２引数の値の空っぽリストを返す
         """
-        results = search_result_json.get("results",[])
+        search_results = search_result_json.get("results",[])
         
         
-        if not results:
+        if not search_results:
             self.logger.info("検索結果にplace_idが存在しません")
             return None
         
         #最初の候補の place_id を取得
-        place_id = results[0].get("place_id")
+        place_id = search_results[0].get("place_id")
         if not place_id:
             self.logger.info("place_idが取得できませんでした") 
             return None
@@ -111,23 +111,113 @@ class GoogleMapsAPI:
         self.logger.info("place_idが取得しました！：成功")
         return place_id
         
+    #辞書かも知れないし、空かもしれない！
+    def get_place_id_detail(self, place_id: str) -> Optional[Dict]:
+        #-----------------------------------------------
+        # ４つ目のフロー
+        # place_id を使って基本情報を取得する
+        # ・住所
+        # ・電話番号
+        # ・ホームページURL
+        # ・評価
+        # ・レビュー総数
+        #-----------------------------------------------
+        if not place_id:
+            self.logger.info("place_idが空のため詳細取得をスキップします!")
+            return None
+        
+        self.logger.info("place_idの詳細を取得します!")
+        
+        #APIリクエストをする
+        #place_id を使って「詳細情報」を取得するためのエンドポイント
+        url = "https://maps.googleapis.com/maps/api/place/details/json"
+        params = {
+            "place_id": place_id,
+            "language": "ja",
+            "fields": "formatted_address,formatted_phone_number,website,rating,user_ratings_total",
+            "key": self.api_key
+        }
+        
+        detail_response = requests.get(url, params=params)
+        #200はHTTPステータスコードで成功したときのステータス!だから成功しなかったときはの話
+        if detail_response.status_code != 200:
+            self.logger.error("HTTPリクエストに失敗しました")
+            return None
+        
+        #リクエストの結果を辞書で受け取る
+        detail_response_json = detail_response.json()
+        
+        #result(リクエスト結果)を取得する　※APIレスポンス：欲しい情報はすべて"result"の中に入っている
+        detail_result = detail_response_json.get("result",{})
+        if not detail_result:
+            self.logger.info("APIレスポンスにresultが存在しません")
+            return None
+        
+        #必要な項目をゲットして抜き出す
+        place_detail = {
+            "address":detail_result.get("formatted_address"),
+            "phone": detail_result.get("formatted_phone_number"),
+            "website": detail_result.get("website"),
+            "rating": detail_result.get("rating"),
+            "review_count": detail_result.get("user_ratings_total")
+        }
+        
+        self.logger.info("詳細情報を取得しました")
+        return place_detail
+    
+    
+    def get_place_reviews(self, place_id: str) -> Optional[list]:
+        #-----------------------------------------------
+        # ５つ目のフロー
+        # ・place_id を使って口コミを取得する
+        # コメントが空の口コミも含める（最大５件までしか取得できない）
+        #-----------------------------------------------
+        if not place_id:
+            self.logger.info("place_idが空のため、口コミ取得をスキップします")
+            return None
+        
+        self.logger.info("口コミ情報を取得します")
+        
+        #place_id を使って「詳細情報」を取得するためのエンドポイント
+        url = "https://maps.googleapis.com/maps/api/place/details/json"
+        params = {
+            "place_id": place_id,
+            "fields": "reviews",
+            "language": "ja",
+            "key": self.api_key
+        }
+        
+        reviews_response = requests.get(url, params=params)
+        
+        #HTTPのエラー判定
+        if reviews_response.status_code != 200:
+            self.logger.error("口コミの取得APIでHTTPエラーが発生しました")
+            return None
+        
+        #JSONに変換！リクエストの結果を辞書で受け取る
+        reviews_response_json = reviews_response.json()
+        
+        #resultを取得する
+        review_result = reviews_response_json.get("result", {})
+        if not review_result:
+            self.logger.info("APIレスポンスにresultが存在しません")
+            return None
+        
+        #reviewsを取得　※なければカラリスト
+        reviews = review_result.get("reviews", [])
+        
+        if not reviews:
+            self.logger.info("口コミは存在しません（0件）")
+            #口コミがないのはエラーじゃないからNoneじゃなくてリスト
+            return []
+        
+        self.logger.info(f"口コミを{len(reviews)}件取得しました")
+        return reviews
+        
+    
         
         
-#-----------------------------------------------
-# ４つ目のフロー
-# place_id を使って基本情報を取得する
-# ・住所
-# ・電話番号
-# ・ホームページURL
-# ・評価
-# ・レビュー総数
-#-----------------------------------------------
-
-#-----------------------------------------------
-# ５つ目のフロー
-# place_id を使って口コミを取得する
-# コメントが空の口コミも含める
-#-----------------------------------------------
+        
 
 #-----------------------------------------------
 # ６つ目のフロー
@@ -142,21 +232,13 @@ class GoogleMapsAPI:
 
 
 
+
+
+
 #〜〜〜〜〜実行〜〜〜〜〜〜
 if __name__ == "__main__":
     #インスタンス
     api = GoogleMapsAPI()
-    
-    #-----------------------------
-    #テスト①：１つ目のフロー単体
-    #-----------------------------
-    #正常なクリニック名　※ここではただ単にクリニック名を入れたときのテスト
-    result = api.receive_clinic_name("テストクリニック")
-    print("テスト①：",result)
-    
-    #空っぽだったらNoneのテスト　レシーブは受け取る！
-    result = api.receive_clinic_name("")
-    print("テスト②：",result)
     
     #-----------------------------
     #テスト②：１つ目のフロー sheets_reader.pyでのクリニック名を受け取る
@@ -176,25 +258,66 @@ if __name__ == "__main__":
     clinic_list = reader.get_status_none_clinic_name_list(df=df_all, status_key=STATUS_KEY,clinic_key=CLINIC_KEY)
     
     #-----------------------------
-    #テスト③：１つ目のフロー →　２つ目のフロー
+    #テスト③：１つ目のフロー →　２つ目のフロー →３つ目のフロー
     #-----------------------------
+    #①受け取り
     for clinic_name in clinic_list:
         clinic_name_for_search = api.receive_clinic_name(clinic_name)
+        if clinic_name_for_search is None:
+            print("クリニック名が空っぽ")
+            continue
         
+        #②APIで検索---------------------------------------
         response_json = api.search_clinic(clinic_name_for_search)
-        
         #もし空っぽだったら！==でもいいけど、１つしか尊意しないからisの方が良い
         if response_json is None:
-            print("→ 検索エラー")
+            print("→検索エラー")
             continue
         
         print("→ 検索成功")
         #これはAPIのステータスを見ているという意味
         print("status:", response_json.get("status"))
-        #どんなの取得しているか全部見てみたいから出力してみる！
-        print(response_json)
+        
+        #③place_idを取得----------------------------------
+        results = response_json.get("results",[])
+        if not results:
+            print("→検索結果なし：resultsが空っぽ")
+            continue
+        
+        place_id = results[0].get("place_id")
+        if not place_id:
+            print("→place_idが存在しません")
+            continue
+        
+        print("取得したplace_id:", place_id)
+        
+        #-----------------------------
+        #テスト④：１つ目のフロー →　２つ目のフロー →３つ目のフロー →４つ目のフロー　→５つ目のフロー
+        #place_id から詳細情報を取得
+        #-----------------------------
+        place_detail = api.get_place_id_detail(place_id)
+        if place_detail is None:
+            print("詳細情報が取得できませんでした")
+            continue
     
-    
-    #-----------------------------
-    #テスト④：１つ目のフロー →　２つ目のフロー　→　３つ目のフロー
-    #-----------------------------
+        print("取得した詳細情報")
+        print(place_detail)
+        
+        #５つ目のフロー------------------
+        reviews = api.get_place_reviews(place_id)
+        #値が存在しない
+        if reviews is None:
+            print("口コミが取得できませんでした")
+            continue
+        
+        #review自体が存在しない０件
+        if not reviews:
+            print("口コミは存在しません")
+            continue
+        
+        for i,review in enumerate(reviews, start=1):
+            author = review.get("author","名無し")
+            rating = review.get("rating","評価なし")
+            comment = review.get("text", "")
+            print(f"{i}. {author} | 評価:{rating} | コメント:{comment}")
+            
