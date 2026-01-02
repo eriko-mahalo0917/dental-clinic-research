@@ -166,11 +166,12 @@ class GoogleMapsAPI:
         return place_detail
     
     
-    def get_place_reviews(self, place_id: str) -> Optional[list]:
+    def get_place_reviews(self, place_id: str, timeout: int = 10) -> Optional[list]:
         #-----------------------------------------------
-        # ５つ目のフロー
-        # ・place_id を使って口コミを取得する
-        # コメントが空の口コミも含める（最大５件までしか取得できない）
+        #５つ目のフロー
+        #・place_id を使って口コミを取得する
+        #・コメントが空の口コミも含める（最大５件までしか取得できない）
+        #・10秒待機を追加
         #-----------------------------------------------
         if not place_id:
             self.logger.info("place_idが空のため、口コミ取得をスキップします")
@@ -187,6 +188,29 @@ class GoogleMapsAPI:
             "key": self.api_key
         }
         
+        
+        try:
+            self.logger.info("口コミの情報を取得します")
+            reviews_response = requests.get(url, params=params, timeout=timeout)
+            #リクエストにある標準モジュールでエラー判定
+            reviews_response.raise_for_status()
+            
+            #JSON型に変換し、結果があれ第一引数として結果を受け取り、なければ空の辞書として受け取る
+            review_result = reviews_response.json().get("result", {})
+            #reviewがなければ空のリスト　※口コミがもともとリストだから
+            reviews = review_result.get("reviews", [])
+            self.logger.info(f"口コミを{len(reviews)}件取得しました")
+            #reviewがあればそれを返して、なければ空リストを返してね！
+            return reviews if reviews else []
+        
+        #通信系エラーのために用意されているもの
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"口コミ取得エラー：{e}")
+            return None       
+        
+        
+        """
+        ##################これは10秒待機がないパターン##################
         reviews_response = requests.get(url, params=params)
         
         #HTTPのエラー判定
@@ -213,22 +237,25 @@ class GoogleMapsAPI:
         
         self.logger.info(f"口コミを{len(reviews)}件取得しました")
         return reviews
-        
+        ###########################################################
+        """
     
+    
+    def 
+        #-----------------------------------------------
+        # ６つ目のフロー
+        # 取得した基本情報と口コミを1つのデータにまとめる
+        #-----------------------------------------------
+        
         
         
         
 
-#-----------------------------------------------
-# ６つ目のフロー
-# 取得した基本情報と口コミを1つのデータにまとめる
-#-----------------------------------------------
-
-#-----------------------------------------------
-# ７つ目のフロー
-# place_id が取得できなかった場合
-# ・すべて空で返す
-#-----------------------------------------------
+        #-----------------------------------------------
+        # ７つ目のフロー
+        # place_id が取得できなかった場合
+        # ・すべて空で返す
+        #-----------------------------------------------
 
 
 
@@ -315,9 +342,9 @@ if __name__ == "__main__":
             print("口コミは存在しません")
             continue
         
-        for i,review in enumerate(reviews, start=1):
-            author = review.get("author","名無し")
+        for review in reviews:
+            author = review.get("author_name","名無し")
             rating = review.get("rating","評価なし")
             comment = review.get("text", "")
-            print(f"{i}. {author} | 評価:{rating} | コメント:{comment}")
+            print(f"コメント:{comment}")
             
