@@ -72,10 +72,12 @@ class SheetReader:
     #スプシアクセスのプロパティ
     #さっき作った『鍵（creds）』を使って、Googleスプレッドシートの世界に『接続（ログイン）』する」 メソッド
     def get_client(self):
+        self.logger.info("APIクライアントに接続します")
         #同じクラス内の creds()メソッドを呼び出し
         creds = self.creds()
         #その関数の処理を使ってgspreadログインし、Clientを作成！
         client = gspread.authorize(creds)
+        self.logger.info("APIクライアントの作成が完了しました")
         return client
     
 # ------------------------------------------------------------    
