@@ -2,7 +2,7 @@
 #インポート
 import os
 import sys
-
+from googleapiclient.discovery import build
 #型ヒント用：戻り値が分かりやすくなるように　辞書かも！Noneかも！
 from typing import Dict, Optional, List
 
@@ -31,23 +31,24 @@ class SheetWriter:
         
     def connect_spreadsheet(self):
         #-----------------------------------------------
-        # １つ目のフロー：スプシへ接続
-        # ・sheet_reader.pyのget_client()を再利用して、APIのクライアントを取得する
+        # １つ目のフロー：認証情報（creds）を取得
+        # ・SheetReaderの認証処理を再利用
+        # ・gspreadとaddBatchUpdateで利用するためのAPIの認証を取得
         #-----------------------------------------------
-        self.logger.info("【SheetWriter】Google Sheets API クライアントに接続します")
+        self.logger.info("【SheetWriter】Google認証情報を取得します")
         
         #sheet_reader.pyのAPI接続を再利用
         reader = SheetReader()
         #SheetReaderにある接続処理を利用
-        client = reader.get_client()
+        self.creads = reader.creds()
         
-        self.logger.info("【SheetWriter】APIクライアントの作成が完了しました")
-        return client
+        self.logger.info("【SheetWriter】認証情報の取得が完了しました")
+        return self.creads
     
     
         
     #※勘違いポイント！1行分 → Dict　複数行分 → List[Dict]だからList[Dict]
-    def make_addsheet_request(self, sheet_data_list: List[Dict]) -> List[Dict]:
+    def make_add_sheet_request(self, sheet_data_list: List[Dict]) -> List[Dict]:
 
         #-----------------------------------------------
         # 2つ目のフロー：WS作成リクエスト作成
@@ -59,7 +60,7 @@ class SheetWriter:
         self.logger.info("WS作成リクエスト作成を開始します")
         
         #変数名: 型 = 値 requests: は 変数の型ヒント
-        requests: List[Dict] = []
+        add_sheet_requests: List[Dict] = []
         
         for sheet_data in sheet_data_list:
             #1店舗分からクリニック名だけを取る
@@ -67,28 +68,30 @@ class SheetWriter:
             
             #addSheet: = 新しいシートを追加する
             #properties:新しく作るシートの設定（プロパティ）
-            add_sheet_request = {"addSheet": {"properties":{"title":clinic_name}}}
+            single_add_sheet_request = {"addSheet": {"properties":{"title":clinic_name}}}
             
             #リクエストのリストに追加をして、次々とリクエストを作成していく
-            requests.append(add_sheet_request)
+            add_sheet_requests.append(single_add_sheet_request)
             
             self.logger.info("addSheetをリクエスト作成しました")
         
-        self.logger.info(f"WS作成リクエスト数：{len(requests)} 件")
+        self.logger.info(f"WS作成リクエスト数：{len(add_sheet_requests)} 件")
         
-        return requests
+        return add_sheet_requests
         
-        
-        
-        
-        
-        
-
-
+    
+    def create_worksheets_batch(self, client, spreadsheet_id: str, add_sheet_requests: List[Dict]) ->Dict:
         #-----------------------------------------------
         # ３つ目のフロー：WS作成を一括実行
         # batchUpdateを使って複数のaddSheetを1回のAPIで実行
         #-----------------------------------------------
+        self.logger.info("WS一括作成（batchUpdate）を開始します")
+        
+        #build()は操作したい値を入れてAPIするためのもの！v4は現在のGoogle Sheets APIのバージョン
+        #credentials=認証情報
+        service = build("sheets", "v4", Credentials = self.creads)
+        
+        
         
         #-----------------------------------------------
         # 4つ目のフロー：データを書き込む
@@ -107,8 +110,4 @@ class SheetWriter:
         # 問題なければ一覧シートのステータス列を「WS作成済み」に更新
         #-----------------------------------------------
         
-
-
-    
-    
 
