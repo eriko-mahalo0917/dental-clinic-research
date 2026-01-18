@@ -25,7 +25,7 @@ class ClinicDataFlow:
         #-----------------------------------------------
         
         #１行分のデータを準備（テンプレートを準備している状態）
-        sheet_data = {
+        clinic_sheet_data = {
             "クリニック名": clinic_name, 
             "住所": "", 
             "電話番号": "", 
@@ -41,11 +41,11 @@ class ClinicDataFlow:
         
         #基本情報がある場合だけ上書き,なければ空白のままにして
         if place_detail:
-            sheet_data["住所"] = place_detail.get("address", "")
-            sheet_data["電話番号"] = place_detail.get("phone", "")
-            sheet_data["ホームページURL"] = place_detail.get("website", "")
-            sheet_data["評価"] = place_detail.get("rating", "")
-            sheet_data["総合レビュー数"] = place_detail.get("review_count", "")
+            clinic_sheet_data["住所"] = place_detail.get("address", "")
+            clinic_sheet_data["電話番号"] = place_detail.get("phone", "")
+            clinic_sheet_data["ホームページURL"] = place_detail.get("website", "")
+            clinic_sheet_data["評価"] = place_detail.get("rating", "")
+            clinic_sheet_data["総合レビュー数"] = place_detail.get("review_count", "")
             
         #口コミは最大５件まで
         if reviews:
@@ -60,7 +60,7 @@ class ClinicDataFlow:
                 reviews[i] は口コミのリストで１件目を辞書に入れていく
                 .get("text", "")はあればテキストで返して、なければ空白で返す
                 """
-                sheet_data[f"口コミ_{i+1}"] = reviews[i].get("text", "")
+                clinic_sheet_data[f"口コミ_{i+1}"] = reviews[i].get("text", "")
                 
         self.logger.info("スプレッドシート1行分のデータを作成しました")
-        return sheet_data
+        return clinic_sheet_data
