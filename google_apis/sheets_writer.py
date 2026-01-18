@@ -48,7 +48,7 @@ class SheetWriter:
     
         
     #※勘違いポイント！1行分 → Dict　複数行分 → List[Dict]だからList[Dict]
-    def make_add_sheet_request(self, sheet_data_list: List[Dict]) -> List[Dict]:
+    def make_add_sheet_request(self, clinic_sheet_data_list: List[Dict]) -> List[Dict]:
 
         #-----------------------------------------------
         # 2つ目のフロー：WS作成リクエスト作成
@@ -62,9 +62,9 @@ class SheetWriter:
         #変数名: 型 = 値 requests: は 変数の型ヒント
         add_sheet_requests: List[Dict] = []
         
-        for sheet_data in sheet_data_list:
+        for clinic_sheet_data in clinic_sheet_data_list:
             #1店舗分からクリニック名だけを取る
-            clinic_name = sheet_data["クリニック名"]
+            clinic_name = clinic_sheet_data["クリニック名"]
             
             #addSheet: = 新しいシートを追加する
             #properties:新しく作るシートの設定（プロパティ）
@@ -106,11 +106,29 @@ class SheetWriter:
         
         return add_sheet_batch_response
         
+    #sheet_id_mapはセルの住所
+    def make_cell_write_requests(self,clinic_sheet_data_list:List[Dict], sheet_id_map: Dict[str,int]) ->List[Dict]
         #-----------------------------------------------
-        # 4つ目のフロー：データを書き込む
+        # 4つ目のフロー：データを書き込む　※ここは命令だけでAPIはまだしない！
         # clinic_data_flow.py から受け取ったDictを使用する
         # ヘッダー行 + データ行をupdateCells リクエストとして配列にまとめる
         #-----------------------------------------------
+        self.logger.info("セル書き込みのリクエスト作成を開始します")
+        
+        #Sheet APIに渡すリクエストの配列でList[Dict]と決まっている！これを準備
+        sheets_api_batch_requests: List[Dict] = []
+        
+        #for文でクリニックごと二処理をする
+        for clinic_sheet_data in clinic_sheet_data_list:
+            clinic_name = clinic_sheet_data["クリニック名"]
+            
+            #このクリニックシートのIDを取得して、どこに書き込めばいいかを確認させる
+            sheet_id = sheet_id_map[clinic_name]
+        
+        
+        
+        
+        
         
         #-----------------------------------------------
         # ５つ目のフロー：データ書き込みを一括実行
