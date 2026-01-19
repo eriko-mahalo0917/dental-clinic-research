@@ -84,6 +84,7 @@ class SheetWriter:
         #-----------------------------------------------
         # ３つ目のフロー：WS作成を一括実行
         # batchUpdateを使って複数のaddSheetを1回のAPIで実行
+        # ４つ目のフローで必要なsheet_id_mapを取得
         #-----------------------------------------------
         self.logger.info("WS一括作成（batchUpdate）を開始します")
         
@@ -95,7 +96,7 @@ class SheetWriter:
         batch_update_body = {"requests":add_sheet_requests}
         
         #新しいたくさんWS作成を一括で実行
-        # #service.spreadsheets().batchUpdate(...).execute()は決まり文句
+        # #service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
         add_sheet_batch_response = (
             service.spreadsheets()
             .batchUpdate(spreadsheetId=spreadsheet_id,body=batch_update_body)
@@ -104,7 +105,29 @@ class SheetWriter:
         
         self.logger.info("WS一括作成（batchUpdate）が完了しました")
         
-        return add_sheet_batch_response
+        #====
+        #sheet_id_mapを取得
+        #====
+        
+        sheet_id_map: Dict[str, int] = {}
+        #reply（リプライ）は1つのレスポンスの塊（辞書）のこと！！
+        #repliesのキーがあれば取得、なかったら空リスト
+        for reply in add_sheet_batch_response.get("replies", []):
+            #replyの中に”addSheet”というキーがあれば…（これを入れることでなかった場合のエラーを回避）
+            if "addSheet" in reply:
+                #"addSheet"の辞書の更に中にある"properties"というキーを取り出す
+                sheet_properties = reply["addSheet"]["properties"]
+                #シートのタイトルを取得
+                title = sheet_properties["title"]
+                #sheetId取得を取得
+                sheet_id = sheet_properties["sheetId"]
+                #最初に準備した辞書へ追加
+                #sheet_id_map = {"〇〇クリニック": 123456789}　※イメージ
+                sheet_id_map[title] = sheet_id
+                self.logger.info(f"シートID取得件数:{len(sheet_id_map)}")
+        return  add_sheet_batch_response, sheet_id_map
+    
+    
         
     #sheet_id_mapはセルの住所
     def make_cell_write_requests(self,clinic_sheet_data_list:List[Dict], sheet_id_map: Dict[str,int]) ->List[Dict]
