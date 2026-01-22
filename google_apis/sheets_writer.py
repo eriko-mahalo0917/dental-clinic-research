@@ -293,3 +293,16 @@ if __name__ == "__main__":
     print(batch_update_result)
     print(sheet_id_map)
     print("🦷🦷🦷ばっちり🦷🦷🦷")
+
+    #-----------------------------------------------
+    # ４つ目のフロー：セルに書き込みのリクエストを作成
+    #-----------------------------------------------
+    cell_write_requests = writer.make_cell_write_requests(clinic_sheet_data_list=sheet_data_list,sheet_id_map=sheet_id_map)
+    
+    print("4つ目のフローを実行。セルへ書き込み命令をします！")
+    
+    #中身を分かりやすく出色してくれるpprintをやってみた(プリティプリント)
+    from pprint import pprint
+    pprint(cell_write_requests)
+    
+    print("４つ目フロー確認完了！🦷")
