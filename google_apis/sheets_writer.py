@@ -333,6 +333,7 @@ class SheetWriter:
                 }
                 
                 status_update_requests.append(status_cell_request)
+                self.logger.info("ステータス更新のリクエストが作成されました")
                 
         return status_update_requests
 
