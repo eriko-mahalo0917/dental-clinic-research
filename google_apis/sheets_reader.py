@@ -4,6 +4,7 @@
 import gspread
 import os
 import sys
+
 #表（DataFrame）に変換するため
 import pandas as pd
 #型ヒントで辞書と教えるため

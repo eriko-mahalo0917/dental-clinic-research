@@ -31,9 +31,9 @@ class SheetWriter:
         
     def connect_spreadsheet(self):
         #-----------------------------------------------
-        # １つ目のフロー：認証情報（creds）を取得
-        # ・SheetReaderの認証処理を再利用
-        # ・gspreadとaddBatchUpdateで利用するためのAPIの認証を取得
+        # １つ目のフロー：Google Sheet APIの接続準備
+        # ・認証情報（creds）を取得　→　SheetReaderの認証処理を再利用
+        # ・Sheets APIのserviceを生成して３つ目と５つ目のフローで使う
         #-----------------------------------------------
         self.logger.info("【SheetWriter】Google認証情報を取得します")
         
@@ -41,6 +41,9 @@ class SheetWriter:
         reader = SheetReader()
         #SheetReaderにある接続処理を利用
         self.creds = reader.creds()
+        
+        #sheets APIのserviceをここで１回だけ作って以降はこれを使う
+        self.service = build("sheets","v4", credentials=self.creds)
         
         self.logger.info("【SheetWriter】認証情報の取得が完了しました")
         return self.creds
@@ -90,16 +93,16 @@ class SheetWriter:
         
         #build()は操作したい値を入れてAPIするためのもの！v4は現在のGoogle Sheets APIのバージョン
         #credentials=認証情報　serviceという名前はAPIを利用していると分かるように
-        service = build("sheets", "v4", credentials = self.creds)
+        #service = build("sheets", "v4", credentials = self.creds)　→　self.serviceにしたので不要
         
         #batchUpdateに渡すリクエストボディ（ボディだから2つ目のフローの成果物を詰めてる感じ）
-        batch_update_body = {"requests":add_sheet_requests}
+        add_sheet_batch_body = {"requests":add_sheet_requests}
         
         #新しいたくさんWS作成を一括で実行
-        # #service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
+        ##service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
         add_sheet_batch_response = (
-            service.spreadsheets()
-            .batchUpdate(spreadsheetId=spreadsheet_id,body=batch_update_body)
+            self.service.spreadsheets()
+            .batchUpdate(spreadsheetId=spreadsheet_id,body=add_sheet_batch_body)
             .execute()
         )
         
@@ -135,7 +138,7 @@ class SheetWriter:
         # 4つ目のフロー：データを書き込む　※ここは命令だけでAPIはまだしない！
         # clinic_data_flow.py から受け取ったDictを使用する
         # 3つ目のフローで取得した sheet_id_mapを使い
-        # ヘッダー行 + データ行をupdateCells リクエストとして配列にまとめる
+        # ヘッダー行 + データ行をupdateCells リクエストとして配列にまとめる＋ヘッダー行の背景色
         #-----------------------------------------------
         self.logger.info("セル書き込みのリクエスト作成を開始します")
         
@@ -194,15 +197,15 @@ class SheetWriter:
             #2行目
             #====
             #リストのvalueの部分のみ取り出してリストにする
-            values = list(clinic_sheet_data.values())
+            row_values = list(clinic_sheet_data.values())
             
-            value_cells = [{"userEnteredValue":{"stringValue": value}} for value in values]
+            cell_data = [{"userEnteredValue":{"stringValue": cell_value}} for cell_value in row_values]
             
             value_request = {
                 #{"updateCells":}ここは命令の内容を組み立てている
                 "updateCells":{
                     #１行分のセルの内容だけを作成している（どこに書くかはまだ決めていない）
-                    "rows":[{"values": value_cells}],
+                    "rows":[{"values": cell_data}],
                     #文字列のみ書き換える　※空のセル想定でも書いておくのが決まり
                     "fields": "userEnteredValue",
                     #書き込み位置の指定
@@ -219,26 +222,95 @@ class SheetWriter:
             
             #命令のリストに追加する
             sheets_api_batch_requests.append(value_request)
-            
+        
+            #====
+            # ヘッダー装飾（背景色）
+            #====
+            header_format_request = {
+                #指定した範囲の見た目をまとめて整える
+                "repeatCell":{
+                    #どこの範囲か指定
+                    "range":{
+                        #どのシートにするのかを指定
+                        "sheetId": sheet_id,
+                        #１行目から
+                        "startRowIndex": 0,
+                        #１行目まで（０まで！）を指定
+                        "endRowIndex": 1,
+                        #列の指定　A列から
+                        "startColumnIndex": 0,
+                        #ヘッダーの数分まで（０からスタートで最後は含まれない）
+                        "endColumnIndex":len(headers)
+                    },
+                    #見た目の設計部分
+                    "cell":{
+                        #userEnteredFormatセルの見た目（背景色・文字装飾など）を指定するための定型構造
+                        "userEnteredFormat":{
+                            #背景色の指定
+                            "backgroundColor":{
+                                #この３つで薄めのグレーを指定
+                                "red":0.8,
+                                "green": 0.8,
+                                "blue": 0.8
+                            },
+                        }
+                    },
+                    #背景色のみを変更することを指定
+                    "fields": "userEnteredFormat(backgroundColor)"
+                }
+            }
+        
+            #命令リストに追加する
+            sheets_api_batch_requests.append(header_format_request)
+        
             self.logger.info("書き込みリクエストを作成しました")
             
         return sheets_api_batch_requests
         
         
-        
-        
-        
-        
+    def write_cells_batch(self, spreadsheet_id: str, sheets_api_batch_requests: List[Dict]) ->Dict:
         #-----------------------------------------------
         # ５つ目のフロー：データ書き込みを一括実行
-        # 複数WSへの書き込みをbatchUpdateで1回のAPIで実行
+        # ４つ目で作成したリクエストで複数WSへの書き込みをbatchUpdateで1回のAPIで実行
         #-----------------------------------------------
+        self.logger.info("セル書き込みbatchUpdateを開始します")
+        
+        try:
+            #build()は操作したい値を入れてAPIを作成！v4は現在のGoogle Sheets APIのバージョン
+            #credentials=認証情報　serviceという名前はAPIを利用していると分かるように
+            #service = build("sheets", "v4", credentials=self.creds) →　self.serviceにしたので不要
+        
+            #batchUpdateに渡すリクエストボディ（ボディだから４つ目のフローの成果物を詰めている）
+            write_cells_batch_body = {"requests": sheets_api_batch_requests}
+        
+            #一括書き込み実行
+            ##service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
+            write_response = (self.service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=write_cells_batch_body).execute())
+            self.logger.info("セルの書き込みが完了しました")
+            return write_response
+        
+        #Google Sheets APIのエラーはHttpErrorなどで返ってくるので、通信系エラーのではなくていい
+        except Exception as e:
+            self.logger.error(f"セルの書き込みでエラー発生:{e}")
+            return None
+        
+        
+        
+        
         
         #-----------------------------------------------
         # ６つ目のフロー：ステータス更新
         # WS作成・書き込みが成功した件数と取得件数に差異がないか確認する
         # 問題なければ一覧シートのステータス列を「WS作成済み」に更新
         #-----------------------------------------------
+
+
+
+
+
+
+
+
 
 
 
@@ -305,4 +377,17 @@ if __name__ == "__main__":
     from pprint import pprint
     pprint(cell_write_requests)
     
+    print("書き込み命令数：",len(cell_write_requests))
+    
     print("４つ目フロー確認完了！🦷")
+    
+    #-----------------------------------------------
+    # 5つ目のフロー：データ書き込みを一括で実行！
+    #-----------------------------------------------
+    write_result = writer.write_cells_batch(spreadsheet_id=spreadsheet_id,sheets_api_batch_requests=cell_write_requests)
+    if write_result is None:
+        print("書き込みに失敗しました")
+    print("5つ目のフローが実行されました")
+
+
+    
