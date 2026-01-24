@@ -294,17 +294,53 @@ class SheetWriter:
             self.logger.error(f"セルの書き込みでエラー発生:{e}")
             return None
         
-        
-        
-        
-        
+    #clinic_list_sheet_idはクリニック一覧シートのID、created_ws_namesは作成済みのWS名リスト、clinic_list_rowsは一覧シートの全行データ
+    def make_status_update_requests(self, clinic_list_sheet_id:str,created_ws_names: List[str], clinic_list_rows: List[List], status_column_index: int = 1) -> List[Dict]:
         #-----------------------------------------------
-        # ６つ目のフロー：ステータス更新
-        # WS作成・書き込みが成功した件数と取得件数に差異がないか確認する
-        # 問題なければ一覧シートのステータス列を「WS作成済み」に更新
+        # ６つ目のフロー：クリニック一覧シートのステータス更新
+        # 作成したWSが一覧シートにある場合は、ステータス列（B列）に
+        # 「WS作成済み」にする命令　※ここは命令だけでAPIはまだしない！
         #-----------------------------------------------
+        self.logger.info("クリニック一覧シートのステータス更新を開始します")
+        
+        #APIにリクスストする内容をまとめる　List[Dict]と決まっている！このセルに何を書くかを追加する
+        status_update_requests: List[Dict] = []
+        
+        #クリニック一覧シートの各行をチェック
+        #enumerate(clinic_list_rows)のインデックスと要素（各業のリスト）を同時に取り出す
+        #enumerate() は「インデックス番号」と「要素」を同時に取得できる関数
+        for row_index, row_data in enumerate(clinic_list_rows):
+            #リストの中のクリニック名が入っているのは最初の列
+            clinic_name_in_list = row_data[0] #０列目はクリニック名
+            #もし作ったシートの中にリストの中のクリニック名があったら
+            if clinic_name_in_list in created_ws_names:
+                
+                #WS作成済みという命令をここで出す
+                status_cell_request = {
+                    #セルの内容を変更する命令
+                    "updateCells":{
+                        #１行分のセルの内容だけを作成している（どこに書くかはまだ決めていない）
+                        "rows":[{"values":[{"userEnteredValue":{"stringValue":"WS作成済み"}}]}],
+                        #入力値だけを更新する
+                        "fields": "userEnteredValue",
+                        "start":{
+                            "sheetId": clinic_list_sheet_id,
+                            #セルの位置を指定　※for文でとってきた行
+                            "rowIndex": row_index,
+                            "columnIndex": status_column_index
+                        }
+                    }
+                }
+                
+                status_update_requests.append(status_cell_request)
+                
+        return status_update_requests
 
 
+        #=========================================================
+        # ７つ目のフロー：ステータス更新命令の実行
+        # 作成した命令をbatchUpdateで一括実行
+        #=========================================================
 
 
 
@@ -390,4 +426,23 @@ if __name__ == "__main__":
     print("5つ目のフローが実行されました")
 
 
+    #-----------------------------------------------
+    # 6つ目のフロー：ステータスの更新命令
+    #-----------------------------------------------
+    #仮で準備して確認
+    clinic_list_rows = [["リベ大デンタルクリニック", ""],["ハニーチュロ歯科", ""],["存在しないクリニック", ""]]
+    
+    #作成済みWSの名前のリスト　３つ目のフローから持ってきた
+    created_ws_names = list(sheet_id_map.keys())
+    clinic_list_sheet_id = 123456789
+    #命令
+    status_update_requests = writer.make_status_update_requests(
+        clinic_list_sheet_id = clinic_list_sheet_id,
+        created_ws_names= created_ws_names,
+        clinic_list_rows = clinic_list_rows,
+        status_column_index = 1
+    )
+    
+    print("６つ目フロー：ステータスの更新命令を作成")
+    pprint(status_update_requests)
     
