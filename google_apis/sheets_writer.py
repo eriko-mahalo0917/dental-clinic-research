@@ -6,9 +6,6 @@ from googleapiclient.discovery import build
 #型ヒント用：戻り値が分かりやすくなるように　辞書かも！Noneかも！
 from typing import Dict, Optional, List, Tuple
 
-#APIをリクエストするため
-import gspread
-
 #JSONファイルを読み込むため
 from google.oauth2.service_account import Credentials
 #ファイルやフォルダの住所を扱うためのモジュール
@@ -43,6 +40,9 @@ class SheetWriter:
         self.creds = reader.creds()
         
         #sheets APIのserviceをここで１回だけ作って以降はこれを使う
+        #build()は操作したい値を入れてAPIを作成！v4は現在のGoogle Sheets APIのバージョン
+        #credentials=認証情報　serviceという名前はAPIを利用していると分かるように
+        #service = build("sheets", "v4", credentials=self.creds) →　self.serviceにしたので不要
         self.service = build("sheets","v4", credentials=self.creds)
         
         self.logger.info("【SheetWriter】認証情報の取得が完了しました")
@@ -98,15 +98,23 @@ class SheetWriter:
         #batchUpdateに渡すリクエストボディ（ボディだから2つ目のフローの成果物を詰めてる感じ）
         add_sheet_batch_body = {"requests":add_sheet_requests}
         
-        #新しいたくさんWS作成を一括で実行
-        ##service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
-        add_sheet_batch_response = (
-            self.service.spreadsheets()
-            .batchUpdate(spreadsheetId=spreadsheet_id,body=add_sheet_batch_body)
-            .execute()
-        )
+        try:
+            
+            #新しいたくさんWS作成を一括で実行
+            ##service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
+            add_sheet_batch_response = (
+                self.service.spreadsheets()
+                .batchUpdate(spreadsheetId=spreadsheet_id,body=add_sheet_batch_body)
+                .execute()
+            )
         
-        self.logger.info("WS一括作成（batchUpdate）が完了しました")
+            self.logger.info("WS一括作成（batchUpdate）が完了しました")
+            
+        except Exception as e:
+            self.logger.error(f"WS作成batchUpdateでエラーが発生しました：{e}")
+            #WSは失敗したためNoneでsheet_id_mapは何も作成されない状態で空辞書を返す
+            #返り値を同じ形にして安全に止める
+            return None, {}
         
         #====
         #sheet_id_mapを取得
@@ -275,14 +283,10 @@ class SheetWriter:
         #-----------------------------------------------
         self.logger.info("セル書き込みbatchUpdateを開始します")
         
+        #batchUpdateに渡すリクエストボディ（ボディだから４つ目のフローの成果物を詰めている）
+        write_cells_batch_body = {"requests": sheets_api_batch_requests}
+        
         try:
-            #build()は操作したい値を入れてAPIを作成！v4は現在のGoogle Sheets APIのバージョン
-            #credentials=認証情報　serviceという名前はAPIを利用していると分かるように
-            #service = build("sheets", "v4", credentials=self.creds) →　self.serviceにしたので不要
-        
-            #batchUpdateに渡すリクエストボディ（ボディだから４つ目のフローの成果物を詰めている）
-            write_cells_batch_body = {"requests": sheets_api_batch_requests}
-        
             #一括書き込み実行
             ##service.spreadsheets().batchUpdate(...).execute()は決まり文句（レスポンス全体）
             write_response = (self.service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=write_cells_batch_body).execute())
@@ -293,6 +297,33 @@ class SheetWriter:
         except Exception as e:
             self.logger.error(f"セルの書き込みでエラー発生:{e}")
             return None
+    
+    
+    def get_sheet_id_by_title(self, spreadsheet_id: str, sheet_title: str) ->Optional[int]:
+        # -------------------------
+        #スプシ内のシート名を指定するとそのsheet_idを種痘する
+        # -------------------------
+        self.logger.info(f"{sheet_title}のシートIDを取得します")
+        
+        try:
+            all_sheets_info = self.service.spreadsheets().get(spreadsheetId=spreadsheet_id).execute()
+        
+            #スプシ全体の情報を取得
+            for one_sheet_info in all_sheets_info.get("sheets",[]):
+                #そのタイトルやIDなどの情報
+                sheet_details = one_sheet_info["properties"]
+            
+                #指定したタイトルと一致したsheetIdを返す
+                if sheet_details["title"] == sheet_title:
+                    self.logger.info(f'{sheet_title}のシートIDを取得しました:{sheet_details["sheetId"]}')
+                    return sheet_details["sheetId"]
+            
+        except Exception as e:
+            self.logger.error(f"シートID取得に失敗しました：{e}")
+            return None
+            
+        
+        
         
     #clinic_list_sheet_idはクリニック一覧シートのID、created_ws_namesは作成済みのWS名リスト、clinic_list_rowsは一覧シートの全行データ
     def make_status_update_requests(self, clinic_list_sheet_id:str,created_ws_names: List[str], clinic_list_rows: List[List], status_column_index: int = 1) -> List[Dict]:
@@ -309,7 +340,7 @@ class SheetWriter:
         #クリニック一覧シートの各行をチェック
         #enumerate(clinic_list_rows)のインデックスと要素（各業のリスト）を同時に取り出す
         #enumerate() は「インデックス番号」と「要素」を同時に取得できる関数
-        for row_index, row_data in enumerate(clinic_list_rows):
+        for row_index, row_data in enumerate(clinic_list_rows[1:],start=1): #ヘッダーを除外
             #リストの中のクリニック名が入っているのは最初の列
             clinic_name_in_list = row_data[0] #０列目はクリニック名
             #もし作ったシートの中にリストの中のクリニック名があったら
@@ -336,13 +367,30 @@ class SheetWriter:
                 self.logger.info("ステータス更新のリクエストが作成されました")
                 
         return status_update_requests
+    
+    
+    
 
-
+    def clinic_list_status_update(self,spreadsheet_id: str, status_update_requests: list[Dict]) -> None:  #ここでは何も返さないから
         #=========================================================
         # ７つ目のフロー：ステータス更新命令の実行
         # 作成した命令をbatchUpdateで一括実行
         #=========================================================
-
+        self.logger.info("クリニック一覧シートのステータス更新を開始します")
+        
+        status_update_body = {"requests":status_update_requests}
+        
+        try:
+            self.service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=status_update_body).execute()
+            
+            self.logger.info("クリニック一覧シートのステータス更新が完了しました\n"
+                            f"作成WS命令数：{len(created_ws_names)}\n"
+                            f"ステータス更新命令数：{len(status_update_requests)}")
+            
+        except Exception as e:
+            self.logger.error(f"ステータス更新のエラーが発生しました：{e}")
+            #処理停止
+            raise
 
 
 
@@ -355,7 +403,6 @@ class SheetWriter:
 # 実行してみる（1〜3つ目のフロー）
 #=========================================================
 if __name__ == "__main__":
-
     print("=== 実行テスト開始 ===")
 
     # SheetWriter インスタンス作成
@@ -425,17 +472,33 @@ if __name__ == "__main__":
     if write_result is None:
         print("書き込みに失敗しました")
     print("5つ目のフローが実行されました")
-
-
+    
+    
+    #-----------------------------------------------
+    #クリニック一覧のシートIDを取得 
+    #-----------------------------------------------
+    print("クリニック一覧のIDを取得します")
+    sheet_title = "テスト一覧"
+    clinic_list_sheet_id = writer.get_sheet_id_by_title(spreadsheet_id=spreadsheet_id,sheet_title=sheet_title)
+    
+    # sheet_id_mapを確認
+    print(sheet_id_map)
+    
+    print("クリニック一覧のID取得に成功しました")
+    
     #-----------------------------------------------
     # 6つ目のフロー：ステータスの更新命令
     #-----------------------------------------------
     #仮で準備して確認
-    clinic_list_rows = [["リベ大デンタルクリニック", ""],["ハニーチュロ歯科", ""],["存在しないクリニック", ""]]
+    clinic_list_rows = [
+    ["クリニック名", "ステータス"],  # ヘッダー
+    ["リベ大デンタルクリニック", ""],
+    ["ハニーチュロ歯科", ""],
+]
+
     
     #作成済みWSの名前のリスト　３つ目のフローから持ってきた
     created_ws_names = list(sheet_id_map.keys())
-    clinic_list_sheet_id = 123456789
     #命令
     status_update_requests = writer.make_status_update_requests(
         clinic_list_sheet_id = clinic_list_sheet_id,
@@ -446,4 +509,16 @@ if __name__ == "__main__":
     
     print("６つ目フロー：ステータスの更新命令を作成")
     pprint(status_update_requests)
+    
+    #-----------------------------------------------
+    # 7つ目のフロー：ステータス更新を一括実行
+    #-----------------------------------------------
+    print("７つ目の【フロー：ステータス更新を実行します")
+    
+    writer.clinic_list_status_update(
+        spreadsheet_id=spreadsheet_id,
+        status_update_requests=status_update_requests
+    )
+    
+    print("7つ目のフロー：ステータス更新が完了しました")
     
