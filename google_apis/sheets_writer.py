@@ -128,12 +128,16 @@ class SheetWriter:
             if "addSheet" in reply:
                 #"addSheet"の辞書の更に中にある"properties"というキーを取り出す
                 sheet_properties = reply["addSheet"]["properties"]
+                
                 #シートのタイトルを取得
                 title = sheet_properties["title"]
+                
                 #sheetId取得を取得
                 sheet_id = sheet_properties["sheetId"]
+                
                 #最初に準備した辞書へ追加
                 #sheet_id_map = {"〇〇クリニック": 123456789}　※イメージ
+                #sheet_id_map[キー] = 値　「辞書に1要素を追加する書き方」
                 sheet_id_map[title] = sheet_id
                 self.logger.info(f"シートID取得件数:{len(sheet_id_map)}")
         return  add_sheet_batch_response, sheet_id_map
@@ -301,7 +305,7 @@ class SheetWriter:
     
     def get_sheet_id_by_title(self, spreadsheet_id: str, sheet_title: str) ->Optional[int]:
         # -------------------------
-        #スプシ内のシート名を指定するとそのsheet_idを種痘する
+        #スプシ内のシート名を指定するとそのsheet_idを取得する
         # -------------------------
         self.logger.info(f"{sheet_title}のシートIDを取得します")
         
@@ -341,7 +345,11 @@ class SheetWriter:
         #enumerate(clinic_list_rows)のインデックスと要素（各業のリスト）を同時に取り出す
         #enumerate() は「インデックス番号」と「要素」を同時に取得できる関数
         for row_index, row_data in enumerate(clinic_list_rows[1:],start=1): #ヘッダーを除外
-            #リストの中のクリニック名が入っているのは最初の列
+            """
+            リストの中のクリニック名が入っているのは最初の列
+            毎回for文で1行ずつ取ってくるから、
+            その都度row_data[0]が「その行の」になる
+            """
             clinic_name_in_list = row_data[0] #０列目はクリニック名
             #もし作ったシートの中にリストの中のクリニック名があったら
             if clinic_name_in_list in created_ws_names:
@@ -398,7 +406,7 @@ class SheetWriter:
 
 
 
-
+"""
 #=========================================================
 # 実行してみる（1〜3つ目のフロー）
 #=========================================================
@@ -521,4 +529,4 @@ if __name__ == "__main__":
     )
     
     print("7つ目のフロー：ステータス更新が完了しました")
-    
+"""   
