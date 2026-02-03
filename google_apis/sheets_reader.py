@@ -173,7 +173,7 @@ class SheetReader:
     
 
 
-
+"""
 #〜〜〜〜実行〜〜〜〜
 if __name__ == "__main__":
 
@@ -208,3 +208,5 @@ if __name__ == "__main__":
 
     print("\n--- ステータス空白のクリニック名一覧 ---")
     print(no_status_clinic_list)
+    
+"""
