@@ -1,42 +1,22 @@
-#１つ目のフロー
-#==sheets_reader===
-#スプレッドシートにAPI連携する
-#スプレッドシートの歯医者さんの名前を全てDataFrameとして読み込む
-#書かれている歯医者さんの名前を取得するが、既に検索したあるデータは除外する
+#=========================================================
+#インポート
+import os
+
+#logger
+from utils.logger import SimpleLogger
+
+#スプシからデータを読み取る
+from google_apis.sheets_reader import SheetReader
+#Google Maps APiからデータを取得する
+from google_apis.gmaps_api import GoogleMapsAPI
+#基本情報と口コミを1つのデータにまとめる
+from models.clinic_data_flow import ClinicDataFlow
+#スプシへデータを書き込みする
+from google_apis.sheets_writer import SheetWriter
+#=========================================================
 
 
 
-
-
-
-#２つ目のフロー
-#==gmaps_api.py==
-#for文で繰り返し処理
-#リスト１件ずつPlaces APIでクリニック名と基本情報と口コミとURLを検索する
-# →データがなければ空白
-#APIエラーが出たらそれをキャッチして30秒ぐらい待機する設計にする
-
-
-
-
-#3つ目のフロー
-#==clinic.py==
-#取得したデータを辞書（JSON形式）にまとめる
-#
-
-
-
-
-
-#４つ目のフロー
-#==sheets_writer.py==
-#スプレッドシートAPIのbatchUpdate を使って歯医者の各データを書き込む
-#新規シートの作成と基本情報などを一度のAPIで実行
-#データの書き込み
-
-
-
-
-
-#５つ目のフロー
-#処理終了
+        #-----------------------------------------------
+        #１つ目のフロー：
+        #-----------------------------------------------    
