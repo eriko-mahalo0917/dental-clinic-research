@@ -35,7 +35,7 @@ class SheetReader:
     # １つ目のフロー：API連携
     #----------------------------------------------- 
     #jsonファイルのパスを取得
-    def _get_json_path(self):
+    def get_json_path(self):
         #親の親ディレクトリに creds.json がある
         json_name = "creds.json"
         self.logger.info(f"JSONファイル名: {json_name}")
@@ -60,8 +60,8 @@ class SheetReader:
         SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         
         #ファイルの住所を特定する　
-        #同じクラス内の_get_json_path() メソッドを呼び出し
-        json_key_path = self._get_json_path()
+        #同じクラス内のget_json_path() メソッドを呼び出し
+        json_key_path = self.get_json_path()
         
         #鍵の生成
         creds = Credentials.from_service_account_file(json_key_path, scopes=SCOPES)
@@ -83,7 +83,7 @@ class SheetReader:
     
 # ------------------------------------------------------------    
     #対象のスプシを開く
-    def _get_gsheet_df( self, sheet_url: str, worksheet_name: str ):
+    def get_gsheet_df( self, sheet_url: str, worksheet_name: str ):
         
         """
         指定したGoogleスプレッドシートのURLとワークシートのデータを取得して
@@ -118,7 +118,7 @@ class SheetReader:
         ①１つ目もフローの全データを再利用
         """
         #①１つ目にフローを呼び出して利用して全データを取得したものをdf_allに代入する
-        df_all = self._get_gsheet_df( sheet_url=sheet_url, worksheet_name=worksheet_name )
+        df_all = self.get_gsheet_df( sheet_url=sheet_url, worksheet_name=worksheet_name )
         
         self.logger.info("一覧のシートの全データを取得しました")
         return df_all        
@@ -182,7 +182,7 @@ if __name__ == "__main__":
     # ---------------------------------
     # ① JSONファイルのパス確認
     # ---------------------------------
-    json_path = instance_sheet_reader._get_json_path()
+    json_path = instance_sheet_reader.get_json_path()
     print(f"JSON Path: {json_path}")
 
     # ---------------------------------
@@ -196,7 +196,7 @@ if __name__ == "__main__":
     # ---------------------------------
     # ② 全データ取得
     # ---------------------------------
-    df_all = instance_sheet_reader._get_gsheet_df(sheet_url=TEST_URL,worksheet_name=TEST_SHEET)
+    df_all = instance_sheet_reader.get_gsheet_df(sheet_url=TEST_URL,worksheet_name=TEST_SHEET)
 
     print("\n--- df_all 取得成功 ---")
     print(df_all.head())
