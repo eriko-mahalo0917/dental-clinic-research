@@ -15,7 +15,7 @@ from pathlib import Path
 #ログ
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
-from sheets_reader import SheetReader
+from google_apis.sheets_reader import SheetReader
 #=========================================================
 
 class SheetWriter:
@@ -46,7 +46,6 @@ class SheetWriter:
         self.service = build("sheets","v4", credentials=self.creds)
         
         self.logger.info("【SheetWriter】認証情報の取得が完了しました")
-        return self.creds
     
     
         
@@ -83,7 +82,7 @@ class SheetWriter:
         return add_sheet_requests
         
     
-    def create_worksheets_batch(self, spreadsheet_id: str, add_sheet_requests: List[Dict]) -> Tuple[Dict, Dict[str, int]]:
+    def create_worksheets_batch(self, spreadsheet_id: str, add_sheet_requests: List[Dict]) -> Tuple[Optional[Dict], Dict[str, int]]:
         #-----------------------------------------------
         # ３つ目のフロー：WS作成を一括実行
         # batchUpdateを使って複数のaddSheetを1回のAPIで実行
@@ -164,6 +163,13 @@ class SheetWriter:
             ## クリニック名をキーにして、対応するsheetIdを取得する　※イメージ　
             sheet_id = sheet_id_map[clinic_name]
             
+            """
+            sheet_id = sheet_id_map.get(clinic_name)
+            if sheet id is None:
+                self.logger.warning(f"{clinic_name}"のsheet_idが見つかりません")
+                continue
+            """
+            
             #====
             #ヘッダー行(1行目)
             #====
@@ -211,7 +217,7 @@ class SheetWriter:
             #リストのvalueの部分のみ取り出してリストにする
             row_values = list(clinic_sheet_data.values())
             
-            cell_data = [{"userEnteredValue":{"stringValue": cell_value}} for cell_value in row_values]
+            cell_data = [{"userEnteredValue":{"stringValue": "" if cell_value is None else str(cell_value)}} for cell_value in row_values]
             
             value_request = {
                 #{"updateCells":}ここは命令の内容を組み立てている
@@ -330,7 +336,7 @@ class SheetWriter:
         
         
     #clinic_list_sheet_idはクリニック一覧シートのID、created_ws_namesは作成済みのWS名リスト、clinic_list_rowsは一覧シートの全行データ
-    def make_status_update_requests(self, clinic_list_sheet_id:str,created_ws_names: List[str], clinic_list_rows: List[List], status_column_index: int = 1) -> List[Dict]:
+    def make_status_update_requests(self, clinic_list_sheet_id:int,created_ws_names: List[str], clinic_list_rows: List[List], status_column_index: int = 1) -> List[Dict]:
         #-----------------------------------------------
         # ６つ目のフロー：クリニック一覧シートのステータス更新
         # 作成したWSが一覧シートにある場合は、ステータス列（B列）に
@@ -392,7 +398,6 @@ class SheetWriter:
             self.service.spreadsheets().batchUpdate(spreadsheetId=spreadsheet_id, body=status_update_body).execute()
             
             self.logger.info("クリニック一覧シートのステータス更新が完了しました\n"
-                            f"作成WS命令数：{len(created_ws_names)}\n"
                             f"ステータス更新命令数：{len(status_update_requests)}")
             
         except Exception as e:

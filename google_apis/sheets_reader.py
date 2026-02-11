@@ -160,16 +160,17 @@ class SheetReader:
     #-----------------------------------------------
     def get_status_none_clinic_name_list(self,df: pd.DataFrame, status_key: str, clinic_key: str) -> list:
         """
-        ステータスが空白の列だけ残す
-        クリニック名を取得する
+        ステータスが空白のクリニックを取得
+        
         """
         self.logger.info("スタータス空白のクリニック名を取得します")
         
         #②ステータス空白を抽出
         #df["ステータス"]列だけ取り出す　
-        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #文字列にして、前後の空白消して、空文字かどうかをTrue / False で判定
+        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #文字列にして、前後の空白を strip() で除去、空文字かどうかをTrue / False で判定
         clinic_name_list = status_none_df[clinic_key].tolist() #.tolist()でリストにしている
         return clinic_name_list
+
     
 
 

@@ -56,7 +56,7 @@ class GoogleMapsAPI:
         
         #APIにパラメーターを渡す　これはよく使う基本のパラメーター！
         #検索ワード、日本語、APIキー
-        params = {"query": clinic_name,"language": "ja" ,"key":self.api_key}
+        params = {"query": clinic_name, "language": "ja" ,"key":self.api_key}
         
         try:
             self.logger.info(f"検索を開始します")
@@ -72,7 +72,7 @@ class GoogleMapsAPI:
         
         #通信系エラーのために用意されているもの
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}\n {e}")
+            self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}, area= {area}\n {e}")
             
             #処理停止になったら、止まってしまうため、エラー時はNoneを返して処理を続ける！
             return None     
