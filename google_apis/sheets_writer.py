@@ -350,15 +350,18 @@ class SheetWriter:
         #クリニック一覧シートの各行をチェック
         #enumerate(clinic_list_rows)のインデックスと要素（各業のリスト）を同時に取り出す
         #enumerate() は「インデックス番号」と「要素」を同時に取得できる関数
-        for row_index, row_data in enumerate(clinic_list_rows[1:],start=1): #ヘッダーを除外
+        for row_index, row_data in enumerate(clinic_list_rows):
+            
             """
             リストの中のクリニック名が入っているのは最初の列
             毎回for文で1行ずつ取ってくるから、
             その都度row_data[0]が「その行の」になる
             """
+            
             clinic_name_in_list = row_data[0] #０列目はクリニック名
             #もし作ったシートの中にリストの中のクリニック名があったら
             if clinic_name_in_list in created_ws_names:
+                self.logger.info(f"更新:{clinic_name_in_list} 行{row_index +1}")
                 
                 #WS作成済みという命令をここで出す
                 status_cell_request = {
@@ -371,7 +374,7 @@ class SheetWriter:
                         "start":{
                             "sheetId": clinic_list_sheet_id,
                             #セルの位置を指定　※for文でとってきた行
-                            "rowIndex": row_index,
+                            "rowIndex": row_index + 1 ,
                             "columnIndex": status_column_index
                         }
                     }
@@ -379,6 +382,8 @@ class SheetWriter:
                 
                 status_update_requests.append(status_cell_request)
                 self.logger.info("ステータス更新のリクエストが作成されました")
+
+
                 
         return status_update_requests
     

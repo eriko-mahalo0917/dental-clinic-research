@@ -31,7 +31,7 @@ class ClinicDataFlow:
             "電話番号": "", 
             "ホームページURL": "", 
             "評価": "", 
-            "総合レビュー数": "", 
+            "総合レビュー（総合評価）": "", 
             "口コミ_1": "",
             "口コミ_2": "",
             "口コミ_3": "",
@@ -45,7 +45,7 @@ class ClinicDataFlow:
             clinic_sheet_data["電話番号"] = place_detail.get("phone", "")
             clinic_sheet_data["ホームページURL"] = place_detail.get("website", "")
             clinic_sheet_data["評価"] = place_detail.get("rating", "")
-            clinic_sheet_data["総合レビュー数"] = place_detail.get("review_count", "")
+            clinic_sheet_data["総合レビュー（総合評価）"] = place_detail.get("review_count", "")
             
         #口コミは最大５件まで
         if reviews:
