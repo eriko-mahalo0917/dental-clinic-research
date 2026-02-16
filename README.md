@@ -80,6 +80,23 @@ https://docs.google.com/spreadsheets/d/【この部分】/edit
 
 ※リポジトリには含めません。
 
+## 🟡ファイル階層
+DENTAL-CLINIC-RESEARCH/
+├ google_apis/
+│   ├ gmaps_api.py
+│   ├ sheets_reader.py
+│   └ sheets_writer.py
+├ models/
+│   └ clinic_data_flow.py
+├ utils/
+│   └ logger.py
+├ config.py
+├ main_flow.py
+├ main.py
+├ requirements.txt
+├ .env
+├ creds.json
+└ README.md
 
 
 ## ⚠️注意点
@@ -87,6 +104,6 @@ https://docs.google.com/spreadsheets/d/【この部分】/edit
 - 本ツールは、スプレッドシートの構成（シート名・列構成）が
   想定された形式であることを前提としています。
   構成を変更した場合、正常に動作しない可能性があります。
-  
+
 - `creds.json` や `.env` ファイルには機密情報が含まれるため、
   GitHubなどのリポジトリには絶対に含めないでください。
