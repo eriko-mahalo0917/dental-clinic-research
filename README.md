@@ -81,6 +81,7 @@ https://docs.google.com/spreadsheets/d/【この部分】/edit
 ※リポジトリには含めません。
 
 ## 🟡ファイル階層
+```
 DENTAL-CLINIC-RESEARCH/
 ├ google_apis/
 │   ├ gmaps_api.py
@@ -97,6 +98,7 @@ DENTAL-CLINIC-RESEARCH/
 ├ .env
 ├ creds.json
 └ README.md
+```
 
 
 ## ⚠️注意点
