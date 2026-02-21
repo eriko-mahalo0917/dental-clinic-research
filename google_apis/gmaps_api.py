@@ -108,7 +108,7 @@ class GoogleMapsAPI:
             self.logger.info("place_idが取得できませんでした") 
             return None
         
-        self.logger.info("place_idが取得しました！：成功")
+        self.logger.info("place_idが取得しました：成功")
         return place_id
         
     #辞書かも知れないし、空かもしれない！
@@ -122,11 +122,6 @@ class GoogleMapsAPI:
         # ・評価
         # ・レビュー総数
         #-----------------------------------------------
-        if not place_id:
-            self.logger.info("place_idが空のため詳細取得をスキップします!")
-            return None
-        
-        self.logger.info("place_idの詳細を取得します!")
         
         #APIリクエストをする
         #place_id を使って「詳細情報」を取得するためのエンドポイント
@@ -173,11 +168,6 @@ class GoogleMapsAPI:
         #・コメントが空の口コミも含める（最大５件までしか取得できない）
         #・10秒待機を追加
         #-----------------------------------------------
-        if not place_id:
-            self.logger.info("place_idが空のため、口コミ取得をスキップします")
-            return None
-        
-        self.logger.info("口コミ情報を取得します")
         
         #place_id を使って「詳細情報」を取得するためのエンドポイント
         url = "https://maps.googleapis.com/maps/api/place/details/json"
