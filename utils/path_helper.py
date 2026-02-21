@@ -16,4 +16,16 @@ def get_base_dir():
         return Path(sys._MEIPASS)
     
     #Pythonで実行したときはこのファイルを見てね
-    return Path(__file__).resolve().parent.parent
+    return Path(__file__).parents[1]
+
+def get_config_dir():
+    #config.pyのディレクトリのパスを返す
+    return get_base_dir()/"config"
+
+def get_creds_path():
+    #cread.jsonのパスを返す
+    return get_base_dir()/"cread.json"
+
+def get_env_path():
+    #.envのパスを返す
+    return get_base_dir()/".env"
