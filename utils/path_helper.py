@@ -5,27 +5,22 @@ import sys
 
 ##########################
 
-def get_base_dir():
-    
+def get_root_dir():
     #getattr(オブジェクト,属性名,デフォルト値　→　あるか分からない属性を、安全に取り出す係
-    #sys frozenはこれってexeですか？　→　Falseではい！
+    #実行はexeファイルされているのか判定　sys frozenはこれってexeですか？　→　Falseではい！
     if getattr(sys, 'frozen', False):
-        
-        #sys._MEIPASS（PyInstallerが実行時に sys に追加した属性）
-        #exeの中身が今使われているフォルダの場所パスだけ返す
-        return Path(sys._MEIPASS)
+        #executableはexeファイルの場所を返していて.parentでその親フォルダを指す
+        return Path(sys.executable).parent
     
-    #Pythonで実行したときはこのファイルを見てね
-    return Path(__file__).parents[1]
-
-def get_config_dir():
-    #config.pyのディレクトリのパスを返す
-    return get_base_dir()/"config"
+    else:
+        #Pythonでの実行はこのファイルから２つ上の階層を返す
+        return Path(__file__).parent[1]
+    
 
 def get_creds_path():
     #cread.jsonのパスを返す
-    return get_base_dir()/"cread.json"
+    return get_root_dir()/"creds.json"
 
 def get_env_path():
     #.envのパスを返す
-    return get_base_dir()/".env"
+    return get_root_dir()/".env"
