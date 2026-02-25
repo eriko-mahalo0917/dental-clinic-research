@@ -1,9 +1,12 @@
 #=========================================================
 #インポート
-import os
+#import os
 
 #logger
 from utils.logger import SimpleLogger
+
+#追加path_helperを使う
+#from utils.path_helper import get_config_dir
 
 #スプシからデータを読み取る
 from google_apis.sheets_reader import SheetReader
@@ -13,7 +16,7 @@ from google_apis.gmaps_api import GoogleMapsAPI
 from models.clinic_data_flow import ClinicDataFlow
 #スプシへデータを書き込みする
 from google_apis.sheets_writer import SheetWriter
-#configを呼び出す
+
 import config
 #=========================================================
 
@@ -33,7 +36,8 @@ class MainFlow:
         sheet_reader = SheetReader()
         
         #①対象のスプシを開く
-        df_all = sheet_reader.get_gsheet_df(sheet_url=config.TEST_URL,worksheet_name=config.TEST_SHEET)
+        df_all = sheet_reader.get_gsheet_df(sheet_url=config.TEST_URL,worksheet_name=config.TEST_SHEET
+)
         
         #②ステータスが空白のクリニックを取得する
         clinic_name_list = sheet_reader.get_status_none_clinic_name_list(df=df_all, status_key=config.STATUS_KEY, clinic_key= config.CLINIC_KEY)
@@ -58,11 +62,16 @@ class MainFlow:
             #①クリニック名で検索（Text Search）
             search_clinic_data = google_maps_api.search_clinic(clinic_name)
             if not search_clinic_data:
+                #🟡追加🟡
+                self.logger.error(f"Text Search失敗：{clinic_name}")
                 continue
             
             #②検索結果からplace_idを取得
             place_id = google_maps_api.get_place_id(search_clinic_data)
             if not place_id:
+                #🟡追加🟡
+                self.logger.error(f"place_id取得失敗：{clinic_name}")
+                self.logger.debug(f"search_clinic_data: {search_clinic_data}")
                 continue
             
             #③place_idを使って詳細情報を取得
@@ -113,7 +122,7 @@ class MainFlow:
         #⑦ステータスを更新するリクエストを作成
         #③で作成した中から
         created_ws_names = list(sheet_id_map.keys())
-        status_up_data_requests = sheet_writer.make_status_update_requests(clinic_list_sheet_id = clinic_list_sheet_id,created_ws_names = created_ws_names,clinic_list_rows = df_all.values,status_column_index = 1)
+        status_up_data_requests = sheet_writer.make_status_update_requests(clinic_list_sheet_id = clinic_list_sheet_id,created_ws_names = created_ws_names,clinic_list_rows = df_all.values.tolist(),status_column_index = 1)
         
         #⑧ステータスの更新を実行
         sheet_writer.clinic_list_status_update(spreadsheet_id = config.SPREADSHEET_ID, status_update_requests = status_up_data_requests)

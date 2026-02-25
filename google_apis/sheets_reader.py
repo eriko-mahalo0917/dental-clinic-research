@@ -1,24 +1,20 @@
-#=========================================================
-#インポート
+#==========================================================
+#path_helper.pyを使うからここでは不要
 #スプレッドシートを操作できるように
 import gspread
-import os
-import sys
 
 #表（DataFrame）に変換するため
 import pandas as pd
 #型ヒントで辞書と教えるため
-from typing import Dict
+#from typing import Dict
 
 #JSONファイルを読み込むため
 from google.oauth2.service_account import Credentials
-#ファイルやフォルダの住所を扱うためのモジュール
-from pathlib import Path
 
-#お隣のutilsのPathを指定するために必要　アブソルートパス
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),"../")))
 #logger
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
+from utils.path_helper import get_creds_path
 
 #==========================================================
 
@@ -28,40 +24,17 @@ class SheetReader:
         self.logger_setup = SimpleLogger()
         self.logger = self.logger_setup.get_logger()
         
-        
-        
-    
     #-----------------------------------------------
     # １つ目のフロー：API連携
-    #----------------------------------------------- 
-    #jsonファイルのパスを取得
-    def get_json_path(self):
-        #親の親ディレクトリに creds.json がある
-        json_name = "creds.json"
-        self.logger.info(f"JSONファイル名: {json_name}")
-        
-        #ここから.envがあるフォルダのパスを教える！親の親
-        parents_dir = Path(__file__).parents[1]
-        self.logger.info(f"親ディレクトリ: {parents_dir}")
-        
-        #Pathlibでフォルダとファイル名を結合して、ここだよ〜！って教える！
-        json_path = parents_dir / json_name
-        self.logger.info(f"JSONファイルのフルパス: {json_path}")
-        
-        #creds.jsonまでのパスを返す！
-        return json_path
-    
-# ------------------------------------------------------------    
-    #スプシの認証プロパティ
-    #json_key_nameは"creds.json"の秘密ファイル
-    #型ヒント：文字列　※これはオーオース・ツー
+    #-----------------------------------------------         
     def creds(self):
         #この秘密ファイルで認証してねでscopeをする
         SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         
         #ファイルの住所を特定する　
         #同じクラス内のget_json_path() メソッドを呼び出し
-        json_key_path = self.get_json_path()
+        json_key_path = get_creds_path()
+        self.logger.info(f"JSONパス:{json_key_path}")
         
         #鍵の生成
         creds = Credentials.from_service_account_file(json_key_path, scopes=SCOPES)
@@ -69,7 +42,9 @@ class SheetReader:
         #戻り値
         return creds
 
-# ------------------------------------------------------------ 
+    #-----------------------------------------------
+    # スプシ接続
+    #-----------------------------------------------
     #スプシアクセスのプロパティ
     #さっき作った『鍵（creds）』を使って、Googleスプレッドシートの世界に『接続（ログイン）』する」 メソッド
     def get_client(self):
@@ -81,7 +56,7 @@ class SheetReader:
         self.logger.info("APIクライアントの作成が完了しました")
         return client
     
-# ------------------------------------------------------------    
+    # ------------------------------------------------------------    
     #対象のスプシを開く
     def get_gsheet_df( self, sheet_url: str, worksheet_name: str ):
         

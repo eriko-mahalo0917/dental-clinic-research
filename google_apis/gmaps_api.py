@@ -1,23 +1,27 @@
 #=========================================================
 #インポート
 import os
-import sys
-#APIでエラーが出たときのために
-import time
 
 #型ヒント用：戻り値が分かりやすくなるように　辞書かも！Noneかも！
-from typing import Dict, Optional
+from typing import Dict, Optional ,List
 
 #APIをリクエストするため
 import requests
 
 #自作分のお呼び出し
 #ログ
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
+from utils.path_helper import get_env_path
 
 from dotenv import load_dotenv
-load_dotenv()
+
+#-----------------------
+#.envの読み込み処理
+#-----------------------
+env_path = get_env_path()
+load_dotenv(env_path)
+
 #=========================================================
 
 class GoogleMapsAPI:
@@ -28,6 +32,9 @@ class GoogleMapsAPI:
         
         #APIキーの取得（.envにある）
         self.api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+        
+        if not self.api_key:
+            raise RuntimeError( "GOOGLE_MAPS_API_KEY が設定されていません。.env または 環境変数を確認してください。")
         
     #レシーブ！受け取るだけど、ちょっとしっくり来ないから検討中！
     def receive_clinic_name(self,clinic_name: str) ->Optional[str]: #結果があるときは文字で返すけど、ないときはNoneって返すかもって意味
@@ -62,7 +69,7 @@ class GoogleMapsAPI:
             self.logger.info(f"検索を開始します")
             
             #GoogleMapのAPIにリクエストする
-            #最大10秒待機！それ以上はタイムアウトでエラー
+            #最大10秒待機！それ以上はタイムアウトでエラー ※timeout=10 はrequestsライブラリが持っている
             response = requests.get(url, params=params, timeout=10)
             
             #HTTPのエラーが分かるメソッド！（認証エラーや見つからないや回数制限とか）
@@ -72,7 +79,7 @@ class GoogleMapsAPI:
         
         #通信系エラーのために用意されているもの
         except requests.exceptions.RequestException as e:
-            self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}, area= {area}\n {e}")
+            self.logger.error(f"Google Maps APIの検索エラー:clinic_name={clinic_name}\n {e}")
             
             #処理停止になったら、止まってしまうため、エラー時はNoneを返して処理を続ける！
             return None     
@@ -112,7 +119,7 @@ class GoogleMapsAPI:
         return place_id
         
     #辞書かも知れないし、空かもしれない！
-    def get_place_id_detail(self, place_id: str) -> Optional[Dict]:
+    def get_place_id_detail(self, place_id: str, timeout: int = 10) -> Optional[Dict]:
         #-----------------------------------------------
         # ４つ目のフロー
         # place_id を使って基本情報を取得する
@@ -133,35 +140,38 @@ class GoogleMapsAPI:
             "key": self.api_key
         }
         
-        detail_response = requests.get(url, params=params)
-        #200はHTTPステータスコードで成功したときのステータス!だから成功しなかったときはの話
-        if detail_response.status_code != 200:
-            self.logger.error("HTTPリクエストに失敗しました")
+        try:
+            detail_response = requests.get(url, params=params, timeout=timeout)
+            #リクエストにある標準モジュールでエラー判定
+            detail_response.raise_for_status()
+  
+            #リクエストの結果をJSON形式で受け取る
+            detail_response_json = detail_response.json()
+        
+            #result(リクエスト結果)を取得する　※APIレスポンス：欲しい情報はすべて"result"の中に入っている
+            detail_result = detail_response_json.get("result",{})
+            if not detail_result:
+                self.logger.info("APIレスポンスにresultが存在しません")
+                return None
+        
+            #必要な項目をゲットして抜き出す
+            place_detail = {
+                "address":detail_result.get("formatted_address"),
+                "phone": detail_result.get("formatted_phone_number"),
+                "website": detail_result.get("website"),
+                "rating": detail_result.get("rating"),
+                "review_count": detail_result.get("user_ratings_total")
+            }
+        
+            self.logger.info("詳細情報を取得しました")
+            return place_detail
+        
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"詳細情報取得エラー: place_id={place_id}\n{e}")
             return None
-        
-        #リクエストの結果をJOSN形式で受け取る
-        detail_response_json = detail_response.json()
-        
-        #result(リクエスト結果)を取得する　※APIレスポンス：欲しい情報はすべて"result"の中に入っている
-        detail_result = detail_response_json.get("result",{})
-        if not detail_result:
-            self.logger.info("APIレスポンスにresultが存在しません")
-            return None
-        
-        #必要な項目をゲットして抜き出す
-        place_detail = {
-            "address":detail_result.get("formatted_address"),
-            "phone": detail_result.get("formatted_phone_number"),
-            "website": detail_result.get("website"),
-            "rating": detail_result.get("rating"),
-            "review_count": detail_result.get("user_ratings_total")
-        }
-        
-        self.logger.info("詳細情報を取得しました")
-        return place_detail
     
     
-    def get_place_reviews(self, place_id: str, timeout: int = 10) -> Optional[list]:
+    def get_place_reviews(self, place_id: str, timeout: int = 10) -> Optional[List]:
         #-----------------------------------------------
         #５つ目のフロー
         #・place_id を使って口コミを取得する

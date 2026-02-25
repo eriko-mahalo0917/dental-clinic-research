@@ -1,19 +1,14 @@
 #=========================================================
 #インポート
-import os
-import sys
 from googleapiclient.discovery import build
 #型ヒント用：戻り値が分かりやすくなるように　辞書かも！Noneかも！
 from typing import Dict, Optional, List, Tuple
 
 #JSONファイルを読み込むため
 from google.oauth2.service_account import Credentials
-#ファイルやフォルダの住所を扱うためのモジュール
-from pathlib import Path
 
 #自作分のお呼び出し
-#ログ
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
 from google_apis.sheets_reader import SheetReader
 #=========================================================
@@ -46,6 +41,7 @@ class SheetWriter:
         self.service = build("sheets","v4", credentials=self.creds)
         
         self.logger.info("【SheetWriter】認証情報の取得が完了しました")
+        return self.creds
     
     
         

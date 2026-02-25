@@ -5,7 +5,7 @@ import sys
 
 ##########################
 
-def get_root_dir():
+def get_root_path():
     #getattr(オブジェクト,属性名,デフォルト値　→　あるか分からない属性を、安全に取り出す係
     #実行はexeファイルされているのか判定　sys frozenはこれってexeですか？　→　Falseではい！
     if getattr(sys, 'frozen', False):
@@ -14,13 +14,13 @@ def get_root_dir():
     
     else:
         #Pythonでの実行はこのファイルから２つ上の階層を返す
-        return Path(__file__).parent[1]
+        return Path(__file__).parents[1]
     
 
 def get_creds_path():
     #cread.jsonのパスを返す
-    return get_root_dir()/"creds.json"
+    return get_root_path()/"creds.json"
 
 def get_env_path():
     #.envのパスを返す
-    return get_root_dir()/".env"
+    return get_root_path()/".env"
