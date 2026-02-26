@@ -12,7 +12,6 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 
 #logger
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from utils.logger import SimpleLogger
 from utils.path_helper import get_creds_path
 

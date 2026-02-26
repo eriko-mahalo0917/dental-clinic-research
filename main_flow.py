@@ -36,8 +36,7 @@ class MainFlow:
         sheet_reader = SheetReader()
         
         #①対象のスプシを開く
-        df_all = sheet_reader.get_gsheet_df(sheet_url=config.TEST_URL,worksheet_name=config.TEST_SHEET
-)
+        df_all = sheet_reader.get_gsheet_df(sheet_url=config.SPREADSHEET_URL,worksheet_name=config.CLINIC_SHEET)
         
         #②ステータスが空白のクリニックを取得する
         clinic_name_list = sheet_reader.get_status_none_clinic_name_list(df=df_all, status_key=config.STATUS_KEY, clinic_key= config.CLINIC_KEY)
@@ -117,7 +116,7 @@ class MainFlow:
         sheet_writer.write_cells_batch(spreadsheet_id = config.SPREADSHEET_ID, sheets_api_batch_requests = cell_write_requests)
         
         #⑥クリニック一覧のsheet_idを取得する
-        clinic_list_sheet_id = sheet_writer.get_sheet_id_by_title(spreadsheet_id = config.SPREADSHEET_ID,sheet_title =config.TEST_SHEET)
+        clinic_list_sheet_id = sheet_writer.get_sheet_id_by_title(spreadsheet_id = config.SPREADSHEET_ID,sheet_title =config.CLINIC_SHEET)
         
         #⑦ステータスを更新するリクエストを作成
         #③で作成した中から
