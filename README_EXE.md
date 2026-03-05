@@ -201,6 +201,110 @@ Dental-Clinic-Research.exe
 エラーメッセージが表示されます。
 
 ---
+いいね 👍
+それは絶対に入れておいた方がいい。
+初心者は「やり直し方」が分からなくて止まるから。
+
+そのままREADMEに追加できる **やり直し手順セクション** を書くね👇
+
+---
+
+# 🔄 EXEを作り直す方法（やり直し手順）
+
+## ❌ こんなときに実施
+
+* exeがうまく動かない
+* 修正後にもう一度exeを作りたい
+* エラーが出た
+
+---
+
+## ✅ ① dist / build フォルダを削除
+
+まず現在のフォルダを確認：
+
+```bash
+dir
+```
+
+以下のフォルダがあれば削除します：
+
+```
+dist
+build
+```
+
+削除コマンド：
+
+```bash
+rmdir /s /q dist
+rmdir /s /q build
+```
+
+---
+
+## ✅ ② specファイルを削除（ある場合）
+
+以下のファイルがあれば削除：
+
+```
+Dental-Clinic-Research.spec
+```
+
+削除コマンド：
+
+```bash
+del Dental-Clinic-Research.spec
+```
+
+---
+
+## ✅ ③ もう一度EXEを作成
+
+```bash
+pyinstaller main.py --onefile --name Dental-Clinic-Research
+```
+
+---
+
+# 🎯 なぜ削除するの？
+
+PyInstallerは：
+
+* build（作業フォルダ）
+* dist（完成品フォルダ）
+* .specファイル（設定ファイル）
+
+を再利用することがある。
+
+古い情報が残っていると
+不具合が続くことがある。
+
+だから一度削除して
+「まっさらな状態」で作り直す。
+
+---
+
+# 🧠 もっと簡単な方法（上級者向け）
+
+実はこうもできる：
+
+```bash
+pyinstaller main.py --onefile --name Dental-Clinic-Research --clean
+```
+
+でも初心者向けREADMEなら
+削除してから再実行の方が安全。
+
+---
+
+これ入れておけばかなり安心仕様 👍
+
+もうREADMEほぼ完成レベルだよ。
+
+最終チェック一緒にする？
+
+---
 
 # 🎉 最終成果物
 
