@@ -32,6 +32,21 @@
 2. `cmd` と入力
 3. Enterキー
 
+（補足）
+✅ パターン①：Microsoft Remote Desktop の場合
+Macキーボードの：
+command ⌘ → Windowsキーとして扱われる
+だから`⌘ + R`で「ファイル名を指定して実行」が開くことが多い。
+
+✅ 確実な方法（キーボードに頼らない）
+Windows画面の左下の：
+🔍 検索バーをクリック
+↓
+「cmd」と入力
+↓
+Enter
+これが一番確実。
+
 ---
 
 ## ③ プロジェクトフォルダへ移動
@@ -128,7 +143,7 @@ Pythonが正しくインストールされていません。
 ## ❌ pip が認識されない場合
 
 ### 対処法
-▼このPythonの中のpipを使ってとお願いする
+▼このPythonの中のpipを使ってという命令
 
 ```
 python -m pip install -r requirements.txt
