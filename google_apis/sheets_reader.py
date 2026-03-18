@@ -101,7 +101,7 @@ class SheetReader:
     #3つ目のフロー　重複チェックをする
     #2つ目のフローで受けとたったdf_allから重複のクリニック名を削除する
     #-----------------------------------------------
-    def remove_clonic_name_df(self,df_all: pd.DataFrame, clinic_key:str) -> pd.DataFrame:
+    def remove_clinic_name_df(self,df_all: pd.DataFrame, clinic_key:str) -> pd.DataFrame:
         self.logger.info(f"{clinic_key}列の重複チェックを開始します")
         
         #pandasの機能で重複を削除する
@@ -152,7 +152,7 @@ class SheetReader:
     #-----------------------------------------------
     #４つ目のフロー　スタータスが空白のクリニック名を取得する
     #-----------------------------------------------
-    def get_status_none_clinic_name_list(self,df: pd.DataFrame, status_key: str, clinic_key: str) -> list:
+    def get_status_none_clinic_name_list(self,df_cleaned: pd.DataFrame, status_key: str, clinic_key: str) -> list:
         """
         ステータスが空白のクリニックを取得
         
@@ -161,7 +161,7 @@ class SheetReader:
         
         #②ステータス空白を抽出
         #df["ステータス"]列だけ取り出す　
-        status_none_df = df[df[status_key].astype(str).str.strip() == ""] #文字列にして、前後の空白を strip() で除去、空文字かどうかをTrue / False で判定
+        status_none_df = df_cleaned[df_cleaned[status_key].astype(str).str.strip() == ""] #文字列にして、前後の空白を strip() で除去、空文字かどうかをTrue / False で判定
         clinic_name_list = status_none_df[clinic_key].tolist() #.tolist()でリストにしている
         return clinic_name_list
 

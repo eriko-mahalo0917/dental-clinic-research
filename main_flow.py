@@ -38,10 +38,15 @@ class MainFlow:
         #①対象のスプシを開く
         df_all = sheet_reader.get_gsheet_df(sheet_url=config.SPREADSHEET_URL,worksheet_name=config.CLINIC_SHEET)
         
-        #②ステータスが空白のクリニックを取得する
-        clinic_name_list = sheet_reader.get_status_none_clinic_name_list(df=df_all, status_key=config.STATUS_KEY, clinic_key= config.CLINIC_KEY)
+        #②重複のクリニック名をスキップする
+        df_clean = sheet_reader.remove_clinic_name_df(df_all, clinic_key=config.CLINIC_KEY)
+        
+        #③ステータスが空白のクリニックを取得する
+        clinic_name_list = sheet_reader.get_status_none_clinic_name_list(df_cleaned=df_clean, status_key=config.STATUS_KEY, clinic_key= config.CLINIC_KEY)
         
         self.logger.info(f"対象のクリニック数：{len(clinic_name_list)}件")
+        
+
         
         #-----------------------------------------------
         #2つ目のフロー：GoogleMapAPIからデータを取得する
