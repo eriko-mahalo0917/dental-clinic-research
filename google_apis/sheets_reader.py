@@ -95,7 +95,27 @@ class SheetReader:
         df_all = self.get_gsheet_df( sheet_url=sheet_url, worksheet_name=worksheet_name )
         
         self.logger.info("一覧のシートの全データを取得しました")
-        return df_all        
+        return df_all
+    
+    #-----------------------------------------------
+    #3つ目のフロー　重複チェックをする
+    #2つ目のフローで受けとたったdf_allから重複のクリニック名を削除する
+    #-----------------------------------------------
+    def remove_clonic_name_df(self,df_all: pd.DataFrame, clinic_key:str) -> pd.DataFrame:
+        self.logger.info(f"{clinic_key}列の重複チェックを開始します")
+        
+        #pandasの機能で重複を削除する
+        #.drop_duplicatesはPandaスのメソッドで上から下に向けてチェックをしていく
+        #subset=[clinic_key]:チェックする列,keep:は最初に見つけた行のクリニック名を残す
+        df_cleaned = df_all.drop_duplicates(subset=[clinic_key],keep= "first")
+        
+        #削除前後の行数を計算してログに表示させる
+        remove_count = len(df_all) - len(df_cleaned)
+        
+        self.logger.info(f"重複チェック完了:{remove_count}件のデータをスキップしました")
+        #重複したクリニック名を削除したものを受け取る
+        return df_cleaned
+        
         
         
     #-----------------------------------------------
