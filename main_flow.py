@@ -17,6 +17,9 @@ from models.clinic_data_flow import ClinicDataFlow
 #スプシへデータを書き込みする
 from google_apis.sheets_writer import SheetWriter
 
+#ポップアップを表示する
+from utils.popup import show_completion_popup
+
 import config
 #=========================================================
 
@@ -97,6 +100,8 @@ class MainFlow:
             
         if not clinic_sheet_data_list:
             self.logger.info("処理対処のクリニックがありませんでした")
+            #🟡追加:0件であることをポップアップする
+            show_completion_popup(0)
             return
             
             
@@ -132,3 +137,13 @@ class MainFlow:
         sheet_writer.clinic_list_status_update(spreadsheet_id = config.SPREADSHEET_ID, status_update_requests = status_up_data_requests)
         
         self.logger.info("クリニック一覧のリサーチが完了しました！")
+        
+        
+        #-----------------------------------------------
+        #5つ目のフロー：ポップアップを表示する
+        #----------------------------------------------- 
+        #ステータスを更新した件数を数える
+        final_success_count = len(status_up_data_requests)
+        
+        #ポップアップを表示!
+        show_completion_popup(final_success_count)
