@@ -1,72 +1,76 @@
-# --- exe化ツール (当日Windowsでビルドするために必須) ---
-pyinstaller==6.19.0
-pyinstaller-hooks-contrib==2026.1
-altgraph==0.17.5
-macholib==1.16.4
+# --- 🚀 今回の最重要：ポップアップ（GUI）とMac最前面制御 ---
+PySide6==6.6.3                # GUIのメインフレームワーク
+PySide6_Addons==6.6.3         # PySide6の拡張機能
+PySide6_Essentials==6.6.3     # PySide6の基本機能セット
+shiboken6==6.6.3              # PythonとC++をつなぐ橋渡し役
+pyobjc-framework-Cocoa==11.1  # 【重要】Macで最前面に出すためのOS操作ライブラリ
+pyobjc-core==11.1             # pyobjcの核となる部品
+PySimpleGUI==5.0.8.3          # 補助的なGUIツール（もし使っていれば）
 
-# --- Google API / スプレッドシート関連 ---
-gspread==6.2.1
-google-api-python-client==2.188.0
-google-auth==2.41.1
-google-auth-oauthlib==1.2.3
-google-auth-httplib2==0.3.0
-google-api-core==2.29.0
-googleapis-common-protos==1.72.0
-googlemaps==4.10.0
+# --- 📦 アプリ化・配布ツール (exe/app作成) ---
+pyinstaller==6.19.0           # プログラムを1つの実行ファイルに固める
+pyinstaller-hooks-contrib==2026.1 # PyInstallerの拡張プラグイン
+altgraph==0.17.5              # グラフ構造を扱う内部ツール
+macholib==1.16.4              # Macの実行ファイル形式を解析する
 
-# --- データ処理・分析 (pandas本体とそれを支える部品) ---
-pandas==2.3.3
-numpy==2.0.2
-python-dateutil==2.9.0.post0
-pytz==2025.2
-tzdata==2025.2
+# --- 📊 データ処理・分析 (リサーチ結果の整理) ---
+pandas==2.3.3                 # データの集計・加工・表形式操作
+numpy==1.26.4                 # 高速な数値計算（pandasの土台）
+python-dateutil==2.9.0.post0  # 日付データの柔軟な操作
+pytz==2025.2                  # タイムゾーン（時差）の管理
+tzdata==2025.2                # 世界各地の時間データ
 
-# --- ブラウザ自動操作 (Selenium関連) ---
-selenium==4.36.0
-trio==0.31.0
-trio-websocket==0.12.2
-websocket-client==1.9.0
-wsproto==1.2.0
-sniffio==1.3.1
-sortedcontainers==2.4.0
-outcome==1.3.0.post0
-h11==0.16.0
-attrs==25.4.0
-PySocks==1.7.1
+# --- 📗 Google API / スプレッドシート連携 ---
+gspread==6.2.1                 # スプレッドシートをPythonから操作
+google-api-python-client==2.188.0 # Googleの各種サービスを利用するための公式ツール
+google-auth==2.41.1            # Googleアカウントの認証管理
+google-auth-oauthlib==1.2.3    # OAuth2.0認証の仕組み
+google-auth-httplib2==0.3.0    # 認証情報を通信に載せるための部品
+google-api-core==2.29.0        # Google APIの共通基盤
+googleapis-common-protos==1.72.0 # API通信用のデータ定義
+googlemaps==4.10.0             # Googleマップ関連のデータ取得（リサーチ用）
 
-# --- ネットワーク通信・セキュリティ ---
-requests==2.32.5
-requests-oauthlib==2.0.0
-urllib3==2.5.0
-charset-normalizer==3.4.4
-idna==3.11
-certifi==2025.11.12
-httplib2==0.31.1
-rsa==4.9.1
-pyasn1==0.6.1
-pyasn1_modules==0.4.2
-cachetools==6.2.1
-oauthlib==3.3.1
-uritemplate==4.2.0
+# --- 🌐 ブラウザ自動操作・ウェブ調査 (Selenium関連) ---
+selenium==4.36.0               # ブラウザを自動で動かす
+trio==0.31.0                   # 非同期通信を管理する土台
+trio-websocket==0.12.2         # ブラウザとのリアルタイム通信（WebSocket）
+websocket-client==1.9.0        # ウェブソケットのクライアント機能
+wsproto==1.2.0                 # プロトコルの処理用
+sniffio==1.3.1                 # 非同期ライブラリの検知用
+sortedcontainers==2.4.0        # 整理されたデータリストの管理
+outcome==1.3.0.post0           # 処理結果のキャッチ用
+h11==0.16.0                    # 通信プロトコル（HTTP/1.1）の実装
+attrs==25.4.0                  # クラス作成を楽にする補助ツール
+PySocks==1.7.1                 # プロキシ経由の通信を可能にする
 
-# --- 環境変数・設定ファイル読み込み ---
-python-dotenv==1.2.1
-tomli==2.3.0
-iniconfig==2.1.0
+# --- 📡 ネットワーク通信・セキュリティ基盤 ---
+requests==2.32.5               # シンプルなURLアクセス（HTTP通信）
+requests-oauthlib==2.0.0       # 認証付きのURLアクセス
+urllib3==2.5.0                 # 通信の低レイヤー（土台）
+charset-normalizer==3.4.4      # 文字化けを防ぐための文字コード判定
+idna==3.11                     # 国際化ドメイン名の処理
+certifi==2025.11.12            # SSL証明書の管理（安全な通信のため）
+httplib2==0.31.1               # 古い形式のHTTPライブラリ
+rsa==4.9.1                     # 暗号化（RSA方式）の処理
+pyasn1==0.6.1                  # データ構造の記述ルール（ASN.1）
+pyasn1_modules==0.4.2          # ASN.1の追加機能
+cachetools==6.2.1              # データを一時保存して高速化する
+oauthlib==3.3.1                # 認証プロトコルの共通ルール
+uritemplate==4.2.0             # URLの書き換え用テンプレート
 
-# --- Python内部の補助ツール・その他 ---
-typing_extensions==4.15.0
-zipp==3.23.0
-importlib_metadata==8.7.1
-six==1.17.0
-packaging==25.0
-pyparsing==3.3.1
-proto-plus==1.27.0
-protobuf==6.33.4
-Pygments==2.19.2
-pluggy==1.6.0
-exceptiongroup==1.3.0
-pytest==8.4.2
-
-# --- ポップアップ（GUI）関連 ---
-PySide6==6.6.1  # バージョンはご自身の環境に合わせてください
+# --- ⚙️ 環境変数・設定・内部補助ツール ---
+python-dotenv==1.2.1           # .envファイルから設定を読み込む
+tomli==2.3.0                   # 設定ファイル（TOML形式）の読み込み
+iniconfig==2.1.0               # 設定ファイル（ini形式）の読み込み
+typing_extensions==4.15.0      # 型定義の拡張
+zipp==3.23.0                   # zipファイル操作の補助
+importlib_metadata==8.7.1      # ライブラリの情報を取得
+six==1.17.0                    # Python 2と3の互換性維持（古い名残）
+packaging==25.0                # バージョン番号などの管理
+pyparsing==3.3.1               # 複雑な文字列の解析
+proto-plus==1.27.0             # 通信用データの変換を楽にする
+protobuf==6.33.4               # Google開発のデータシリアライズ形式
+Pygments==2.19.2               # コードの見た目をきれいに色付けする
+pluggy==1.6.0                  # プラグインの仕組みを作る
+exceptiongroup==1.3.0          # 複数のエラーをまとめて扱う
+pytest==8.4.2                  # プログラムが正しく動くかテストする
