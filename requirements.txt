@@ -3,15 +3,15 @@ PySide6==6.6.3                # GUIのメインフレームワーク
 PySide6_Addons==6.6.3         # PySide6の拡張機能
 PySide6_Essentials==6.6.3     # PySide6の基本機能セット
 shiboken6==6.6.3              # PythonとC++をつなぐ橋渡し役
-pyobjc-framework-Cocoa==11.1  # 【重要】Macで最前面に出すためのOS操作ライブラリ
-pyobjc-core==11.1             # pyobjcの核となる部品
+pyobjc-framework-Cocoa==11.1; sys_platform == "darwin"  # 【重要】Macで最前面に出すためのOS操作ライブラリ（Mac専用）
+pyobjc-core==11.1; sys_platform == "darwin"             # pyobjcの核となる部品（Mac専用）
 PySimpleGUI==5.0.8.3          # 補助的なGUIツール（もし使っていれば）
 
 # --- 📦 アプリ化・配布ツール (exe/app作成) ---
 pyinstaller==6.19.0           # プログラムを1つの実行ファイルに固める
 pyinstaller-hooks-contrib==2026.1 # PyInstallerの拡張プラグイン
 altgraph==0.17.5              # グラフ構造を扱う内部ツール
-macholib==1.16.4              # Macの実行ファイル形式を解析する
+macholib==1.16.4; sys_platform == "darwin"  # Macの実行ファイル形式を解析する（Mac専用）
 
 # --- 📊 データ処理・分析 (リサーチ結果の整理) ---
 pandas==2.3.3                 # データの集計・加工・表形式操作
